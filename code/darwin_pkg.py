@@ -1,4 +1,5 @@
 import os
+from functools import cached_property
 from argparse import Namespace
 from pathlib import Path
 
@@ -284,8 +285,25 @@ class Mac(Script, GithubDownloadable):
         ]
 
         for cask in casks:
+            # 특수 옵션이 있는 cask 처리
+            cask_name = cask.split()[-1] if "--no-quarantine" in cask else cask
+            
+            if cask_name in self._installed_casks:
+                print(f"Skipping {cask_name} - already installed")
+                continue
+                
             self.shell.exec(
                 f"Installing {cask}",
                 f"brew install --cask {cask}",
             )
         return
+
+    @cached_property
+    def _installed_casks(self) -> set[str]:
+        # 이미 설치된 cask 목록 가져오기
+        ok, installed_casks_output, _ = self.shell.run("brew list --cask -1")
+        if not ok:
+            print("Failed to list homebrew casks")
+            return set()
+        return set(installed_casks_output.strip().split('\n')) if installed_casks_output.strip() else set()
+
