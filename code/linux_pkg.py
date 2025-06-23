@@ -176,7 +176,7 @@ class LinuxAMD64(Script, GithubDownloadable):
                 "Installing kotlin lsp",
                 f"curl -Lfo /tmp/kotlin-lsp.zip '{kotlin_lsp_link}'",
                 f"unzip -o /tmp/kotlin-lsp.zip -d {self.HOME}/.local/bin/",
-                f"chmod +x {self.HOME}/.local/bin/kotlin-lsp",
+                f"chmod +x {self.HOME}/.local/bin/kotlin-lsp.sh",
                 "rm -f /tmp/kotlin-lsp.zip",
                 )
 
