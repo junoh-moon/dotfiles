@@ -1,2 +1,21 @@
 #!/usr/bin/env bash
-powershell.exe -command "Get-Clipboard"
+
+paste_from_clipboard() {
+	case "$(uname -a)" in
+	*WSL*)
+		powershell.exe -command "Get-Clipboard"
+		;;
+	*Darwin*)
+		pbpaste
+		;;
+	*)
+		xclip -selection clipboard -o
+		;;
+	esac
+}
+
+if [ -n "$TMUX" ]; then
+	tmux save-buffer -p 2>/dev/null || paste_from_clipboard
+else
+	paste_from_clipboard
+fi
