@@ -4,6 +4,7 @@ from argparse import Namespace
 from pathlib import Path
 
 from java_installer import JavaInstaller
+from kotlin_lsp_installer import KotlinLspInstaller
 from node_installer import NodeInstaller
 from package_manager import PackageManager
 from script import Script
@@ -170,15 +171,7 @@ class Mac(Script, GithubDownloadable):
             f"mv -f {self.HOME}/.local/bin/7zz {self.HOME}/.local/bin/7z",
         )
 
-        KOTLIN_LSP_VERSION = "0.252.17811"
-        kotlin_lsp_link = f"https://download-cdn.jetbrains.com/kotlin-lsp/{KOTLIN_LSP_VERSION}/kotlin-{KOTLIN_LSP_VERSION}.zip"
-        self.shell.exec_list(
-                "Installing kotlin lsp",
-                f"curl -Lfo /tmp/kotlin-lsp.zip '{kotlin_lsp_link}'",
-                f"unzip -o /tmp/kotlin-lsp.zip -d {self.HOME}/.local/bin/",
-                f"chmod +x {self.HOME}/.local/bin/kotlin-lsp.sh",
-                "rm -f /tmp/kotlin-lsp.zip",
-                )
+        KotlinLspInstaller(self.args).run()
 
         self.shell.exec(
             "Installing commitgpt",

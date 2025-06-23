@@ -8,6 +8,7 @@ from pathlib import Path
 
 from elixir_installer import ElixirInstaller
 from java_installer import JavaInstaller
+from kotlin_lsp_installer import KotlinLspInstaller
 from node_installer import NodeInstaller
 from script import Script
 from util import GithubDownloadable
@@ -170,15 +171,7 @@ class LinuxAMD64(Script, GithubDownloadable):
             ),
         )
 
-        KOTLIN_LSP_VERSION = "0.252.17811"
-        kotlin_lsp_link = f"https://download-cdn.jetbrains.com/kotlin-lsp/{KOTLIN_LSP_VERSION}/kotlin-{KOTLIN_LSP_VERSION}.zip"
-        self.shell.exec_list(
-                "Installing kotlin lsp",
-                f"curl -Lfo /tmp/kotlin-lsp.zip '{kotlin_lsp_link}'",
-                f"unzip -o /tmp/kotlin-lsp.zip -d {self.HOME}/.local/bin/",
-                f"chmod +x {self.HOME}/.local/bin/kotlin-lsp.sh",
-                "rm -f /tmp/kotlin-lsp.zip",
-                )
+        KotlinLspInstaller(self.args).run()
 
         if self.args.java:
             JavaInstaller(self.args).run()
