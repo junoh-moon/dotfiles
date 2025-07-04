@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import json
 import os
 import re
 from argparse import ArgumentParser
@@ -51,11 +52,9 @@ class FileLinker(Script):
             f'ln -fs "{proj_root}"/.xprofile {HOME}/.xprofile',  # Set higher priority to vim
             f"mkdir -p {HOME}/.vim",
             f'ln -fs "{proj_root}"/tasks.ini {HOME}/.vim/tasks.ini',
-
-            f"mkdir -p {HOME}/.claude",
-            f'ln -fs "{proj_root}"/config/claude-code/CLAUDE.md {HOME}/.claude/CLAUDE.md',
-            f'ln -fs "{proj_root}"/config/claude-code/settings.json {HOME}/.claude/settings.json',
         )
+
+        self._setup_claude_code()
 
         if not os.path.islink(f"{HOME}/.config"):
             self.shell.exec(
@@ -124,6 +123,31 @@ class FileLinker(Script):
                 rf"ln -sf {self.proj_root}/config/Cursor/mcp.json $HOME/Library/Application\ Support/Claude/claude_desktop_config.json",
             )
 
+        return
+
+    def _setup_claude_code(self):
+        HOME = self.HOME
+        proj_root = self.proj_root
+
+        if not self.shell.run("which -a claude")[0]:
+            return
+
+        self.shell.exec_list(
+            "Linking claude code configs",
+            f"mkdir -p {HOME}/.claude",
+            f'ln -fs "{proj_root}"/config/claude-code/CLAUDE.md {HOME}/.claude/CLAUDE.md',
+            f'ln -fs "{proj_root}"/config/claude-code/settings.json {HOME}/.claude/settings.json',
+        )
+        with open(f"{proj_root}/config/claude-code/mcp.json") as f:
+            mcp_list = json.load(f)
+        add_commands = [
+            f"claude mcp add-json --scope user -- {name} '{json.dumps(json_str)}' "
+            for name, json_str in mcp_list.items()
+        ]
+        self.shell.exec_list(
+            "Installing mcp servers for claude code",
+            *add_commands,
+        )
         return
 
     def _is_wsl(self):

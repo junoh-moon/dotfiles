@@ -1,0 +1,26 @@
+{
+  "playwright-browser": {
+    "type": "stdio",
+    "command": "uvx",
+    "args": [
+      "playwright-server"
+    ]
+  },
+  "sequential-thinking": {
+    "type": "stdio",
+    "command": "npx",
+    "args": [
+      "-y",
+      "@modelcontextprotocol/server-sequential-thinking"
+    ]
+  },
+  "time": {
+    "type": "stdio",
+    "command": "uvx",
+    "args": [
+      "mcp-server-time",
+      "--local-timezone",
+      "Asia/Seoul"
+    ]
+  }
+}
