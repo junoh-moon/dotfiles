@@ -62,7 +62,9 @@
       "Search",
       "WebFetch",
       "WebSearch",
-	  "mcp__sequential-thinking__sequentialthinking"
+      "mcp__sequential-thinking__sequentialthinking",
+      "mcp__playwright-browser__playwright_navigate",
+      "mcp__playwright-browser__playwright_screenshot"
     ],
     "deny": [
       "NotebookEdit",
