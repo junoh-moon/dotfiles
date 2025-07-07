@@ -61,7 +61,8 @@
       "Read",
       "Search",
       "WebFetch",
-      "WebSearch"
+      "WebSearch",
+	  "mcp__sequential-thinking__sequentialthinking"
     ],
     "deny": [
       "NotebookEdit",
