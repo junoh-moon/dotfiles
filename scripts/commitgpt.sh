@@ -28,9 +28,9 @@ generate_commit_message() {
     git diff --cached | claude -p "$prompt
 
 Format the commit message as plain text (no markdown):
-- First line: conventional commit format (feat:, fix:, docs:, etc.) under 72 chars
+- First line: conventional commit format (feat:, fix:, docs:, etc.) under 72 chars in English
 - Empty line
-- Body: wrapped at 72 chars, explaining what and why
+- Body: wrapped at 72 chars, explaining what and why in Korean
 
 Output only the commit message, no code blocks or formatting."
 }
@@ -77,8 +77,7 @@ while true; do
         case $choice in
             a|A)
                 echo -e "\n${GREEN}Creating commit...${NC}"
-                git commit -m "$commit_message"
-                if [ $? -eq 0 ]; then
+                if git commit -m "$commit_message" ; then
                     echo -e "${GREEN}Commit created successfully!${NC}"
                 else
                     echo -e "${RED}Failed to create commit.${NC}"
