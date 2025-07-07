@@ -70,5 +70,6 @@
       "NotebookEdit",
       "NotebookRead"
     ]
-  }
+  },
+  "model": "opus"
 }
