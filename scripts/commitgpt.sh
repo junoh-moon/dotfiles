@@ -27,16 +27,12 @@ generate_commit_message() {
     # Get the staged diff and generate commit message
     git diff --cached | claude -p "$prompt
 
-Please format the commit message as:
-<subject line>
+Format the commit message as plain text (no markdown):
+- First line: conventional commit format (feat:, fix:, docs:, etc.) under 72 chars
+- Empty line
+- Body: wrapped at 72 chars, explaining what and why
 
-<body>
-
-Make sure to:
-- Use conventional commit format (feat:, fix:, docs:, style:, refactor:, test:, chore:, etc.)
-- Keep subject line under 72 characters
-- Wrap body at 72 characters
-- Explain what and why, not how"
+Output only the commit message, no code blocks or formatting."
 }
 
 # Function to display commit message
