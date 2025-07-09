@@ -76,6 +76,21 @@
                         "description": "R_Option ➜ 한영전환",
                         "manipulators": [
                             {
+                                "conditions": [
+                                    {
+                                        "bundle_identifiers": [
+                                            "com.parallels.desktop",
+                                            "com.parallels.vm",
+                                            "com.parallels.desktop.console",
+                                            "com.parallels.winapp.",
+                                            "com.microsoft.rdc.macos",
+                                            "com.p5sys.jump.mac.viewer.web",
+                                            "com.p5sys.jump.mac.viewer",
+                                            "org.xquartz.X11"
+                                        ],
+                                        "type": "frontmost_application_unless"
+                                    }
+                                ],
                                 "from": {
                                     "key_code": "right_option",
                                     "modifiers": { "optional": ["caps_lock", "shift"] }
@@ -103,7 +118,8 @@
                                             "com.parallels.winapp.",
                                             "com.microsoft.rdc.macos",
                                             "com.p5sys.jump.mac.viewer.web",
-                                            "com.p5sys.jump.mac.viewer"
+                                            "com.p5sys.jump.mac.viewer",
+                                            "org.xquartz.X11"
                                         ],
                                         "type": "frontmost_application_if"
                                     }
