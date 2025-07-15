@@ -17,15 +17,26 @@ fi
 
 # Function to generate commit message
 generate_commit_message() {
-    local context="${1:-}"
+	local continue_session="$1"
+    local context="${2:-}"
     local prompt="Based on the following git diff of staged changes, generate a conventional commit message with a clear subject line (max 72 chars) and body (wrapped at 72 chars). The message should clearly explain what changed and why."
     
     if [ -n "$context" ]; then
         prompt="$prompt Additional context from user: $context"
     fi
     
+    # Use -c flag for regenerate to maintain session
+    local claude_cmd="claude"
+    if [ "$continue_session" = "true" ]; then
+        claude_cmd="claude --continue"
+	else
+        claude_cmd="claude"
+    fi
+
+	echo "$claude_cmd"
+    
     # Get the staged diff and generate commit message
-    git diff --cached | claude -p "$prompt
+    git diff --cached | $claude_cmd --print "$prompt
 
 Format the commit message as plain text (no markdown):
 - First line: conventional commit format (feat:, fix:, docs:, etc.) under 72 chars in English
@@ -47,7 +58,7 @@ display_commit_message() {
 while true; do
     # Generate initial commit message
     echo -e "${GREEN}Generating commit message...${NC}"
-    commit_message=$(generate_commit_message)
+    commit_message=$(generate_commit_message "false")
     
     if [ -z "$commit_message" ]; then
         echo -e "${RED}Failed to generate commit message.${NC}"
@@ -65,12 +76,16 @@ while true; do
         echo
         read -p "Your choice: " -r input
         
-        # Parse the input
+        # Parse the input more robustly
+        # Extract the first word as choice
         choice=$(echo "$input" | awk '{print $1}')
-        context=$(echo "$input" | cut -d' ' -f2-)
         
-        # If choice and context are the same, it means no context was provided
-        if [ "$choice" = "$context" ]; then
+        # Extract everything after the first space as context
+        # Use bash regex (requires bash 3.0+) to preserve the exact input
+        # The regex allows optional leading whitespace before 'r' or 'R'
+        if [[ "$input" =~ ^[[:space:]]*[rR][[:space:]]+(.+)$ ]]; then
+            context="${BASH_REMATCH[1]}"
+        else
             context=""
         fi
         
@@ -89,7 +104,7 @@ while true; do
                 if [ -n "$context" ]; then
                     echo -e "${BLUE}With context: $context${NC}"
                 fi
-                commit_message=$(generate_commit_message "$context")
+                commit_message=$(generate_commit_message "true" "$context")
                 
                 if [ -z "$commit_message" ]; then
                     echo -e "${RED}Failed to generate commit message.${NC}"
