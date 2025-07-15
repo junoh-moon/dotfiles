@@ -33,8 +33,6 @@ generate_commit_message() {
         claude_cmd="claude"
     fi
 
-	echo "$claude_cmd"
-    
     # Get the staged diff and generate commit message
     git diff --cached | $claude_cmd --print "$prompt
 
