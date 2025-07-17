@@ -16,6 +16,7 @@
 	"java.codeGeneration.hashCodeEquals.useJava7Objects": true,
 	"java.codeGeneration.toString.codeStyle": "STRING_FORMAT",
 	"java.codeGeneration.useBlocks": true,
+	"java.enabled": false,
 	"java.format.comments.enabled": true,
 	"java.format.enabled": true,
 	"java.format.settings.profile": "FormattingStyle",
