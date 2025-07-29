@@ -7,3 +7,7 @@
     - For K8s cluster databases: either port-forward + local access or temporary client pods
     - For multiple queries: consider keeping containers running and using docker exec, then cleanup
     - Choose appropriate client versions based on target database version
+- When completing a logical unit of work (e.g., finishing a TODO item, completing a feature without bugs), establish a checkpoint:
+    - In manual mode: suggest to the user to create a git commit
+    - In `auto-accept edits on` mode: proactively create a git commit with appropriate message
+    - Consider a checkpoint complete when: a TODO is fully implemented, a feature works without errors, or a bug fix is verified
