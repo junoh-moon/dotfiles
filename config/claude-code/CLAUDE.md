@@ -11,3 +11,4 @@
     - In manual mode: suggest to the user to create a git commit
     - In `auto-accept edits on` mode: proactively create a git commit with appropriate message
     - Consider a checkpoint complete when: a TODO is fully implemented, a feature works without errors, or a bug fix is verified
+- When creating or editing a Github pull request (PR), write body in Korean and omit the "Test plan" section.

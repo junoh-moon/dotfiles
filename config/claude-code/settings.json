@@ -48,6 +48,8 @@
       "Bash(wget:*)",
       "Bash(which:*)",
       "Bash(zip:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr view:*)",
       "Bash(gh run list:*)",
       "Bash(gh run view:*)",
       "Bash(gh workflow list:*)",
