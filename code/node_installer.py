@@ -16,12 +16,16 @@ class NodeInstaller(Script):
     def run(self):
         self.shell.exec(
             "Installing nvm",
-            "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | PROFILE=/dev/null bash",
+            """
+            _NVM_VER=$(curl -s "https://api.github.com/repos/nvm-sh/nvm/releases/latest" | grep '"tag_name":' | cut -d '"' -f 4);
+            echo $_NVM_VER
+            curl -s -o- https://raw.githubusercontent.com/nvm-sh/nvm/$_NVM_VER/install.sh | PROFILE=/dev/null bash
+            """,
             # Set PROFILE to /dev/null to not update .zshrc or .bashrc
         )
         self._sourced_exec(
             "Installing nodejs lts via nvm",
-            f"nvm install --lts",
+            f"nvm install --lts --reinstall-packages-from=current",
         )
         self._sourced_exec(
             "Installing yarn",
