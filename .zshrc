@@ -23,7 +23,7 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
-export FZF_BASE=$HOME/.vim/plugged/fzf
+
 
 [ ! -d "${HOME}/.zgenom" ] && git clone --depth 1 https://github.com/jandamm/zgenom.git "${HOME}/.zgenom"
 source "${HOME}/.zgenom/zgenom.zsh" > /dev/null
@@ -91,7 +91,9 @@ command -v kubectl &> /dev/null && source <(kubectl completion zsh)
 command -v k9s &> /dev/null && source <(k9s completion zsh)
 command -v helm &> /dev/null && source <(helm completion zsh)
 
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+if command -v fzf > /dev/null 2>&1; then
+	source <(fzf --zsh)
+fi
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh

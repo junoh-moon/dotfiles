@@ -143,7 +143,9 @@ command -v kubectl &>/dev/null && source <(kubectl completion bash)
 command -v k9s &>/dev/null && source <(k9s completion bash)
 command -v helm &>/dev/null && source <(helm completion bash)
 
-[ -f ~/.fzf.bash ] && source ~/.fzf.bash
+if command -v fzf > /dev/null 2>&1; then
+	eval "$(fzf --bash)"
+fi
 
 if [ -f ~/.asdf ]; then
 	. $HOME/.asdf/asdf.sh

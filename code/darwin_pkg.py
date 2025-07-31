@@ -1,6 +1,6 @@
 import os
-from functools import cached_property
 from argparse import Namespace
+from functools import cached_property
 from pathlib import Path
 
 from java_installer import JavaInstaller
@@ -171,6 +171,11 @@ class Mac(Script, GithubDownloadable):
             f"mv -f {self.HOME}/.local/bin/7zz {self.HOME}/.local/bin/7z",
         )
 
+        self.shell.exec(
+            "Installing fzf",
+            self.github_dl_cmd("junegunn/fzf", "darwin_arm64.tar.gz"),
+        )
+
         KotlinLspInstaller(self.args).run()
 
         self.shell.exec(
@@ -280,11 +285,11 @@ class Mac(Script, GithubDownloadable):
         for cask in casks:
             # 특수 옵션이 있는 cask 처리
             cask_name = cask.split()[-1] if "--no-quarantine" in cask else cask
-            
+
             if cask_name in self._installed_casks:
                 print(f"Skipping {cask_name} - already installed")
                 continue
-                
+
             self.shell.exec(
                 f"Installing {cask}",
                 f"brew install --cask {cask}",
@@ -298,5 +303,8 @@ class Mac(Script, GithubDownloadable):
         if not ok:
             print("Failed to list homebrew casks")
             return set()
-        return set(installed_casks_output.strip().split('\n')) if installed_casks_output.strip() else set()
-
+        return (
+            set(installed_casks_output.strip().split("\n"))
+            if installed_casks_output.strip()
+            else set()
+        )

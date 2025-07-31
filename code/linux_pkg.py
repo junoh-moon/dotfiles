@@ -52,6 +52,14 @@ class LinuxAMD64(Script, GithubDownloadable):
         )
 
         self.shell.exec(
+            "Installing fzf",
+            self.github_dl_cmd(
+                "junegunn/fzf",
+                "linux_amd64.tar.gz",
+            ),
+        )
+
+        self.shell.exec(
             "Installing bazel-lsp",
             self.github_dl_single_cmd(
                 "cameron-martin/bazel-lsp",

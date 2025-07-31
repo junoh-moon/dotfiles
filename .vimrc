@@ -104,7 +104,8 @@ let g:indentLine_char = '┊'
 set list lcs=tab:\┊\ 
 
 "fzf 설정
-Plug 'junegunn/fzf', { 'do': './install --all' }
+Plug 'junegunn/fzf'
+Plug 'junegunn/fzf.vim'
 nnoremap <leader><C-n> :Files<CR>
 
 if executable("rg")
@@ -112,9 +113,6 @@ if executable("rg")
 else
 	nnoremap <leader>r :Ag!<CR>
 endif
-
-set rtp+=~/.vim/plugged/fzf
-Plug 'junegunn/fzf.vim'
 
 " Only focus on file contents, not file names
 command! -bang -nargs=* Ag call fzf#vim#ag(<q-args>, {'options': '--delimiter : --nth 4..'}, <bang>0)
