@@ -140,12 +140,17 @@ class FileLinker(Script):
         )
         with open(f"{proj_root}/config/claude-code/mcp.json") as f:
             mcp_list = json.load(f)
+        remove_commands = [
+            f"claude mcp remove --scope user -- {name} || echo '{name} is already removed'"
+            for name in mcp_list.keys()
+        ]
         add_commands = [
             f"claude mcp add-json --scope user -- {name} '{json.dumps(json_str)}' "
             for name, json_str in mcp_list.items()
         ]
         self.shell.exec_list(
             "Installing mcp servers for claude code",
+            *remove_commands,
             *add_commands,
         )
         return
