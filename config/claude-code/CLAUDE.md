@@ -12,3 +12,4 @@
     - In `auto-accept edits on` mode: proactively create a git commit with appropriate message
     - Consider a checkpoint complete when: a TODO is fully implemented, a feature works without errors, or a bug fix is verified
 - When creating or editing a Github pull request (PR), write body in Korean and omit the "Test plan" section.
+- Do not attempt to run the `sudo` command yourself; instead, ask the user to run it manually and wait for their result.
