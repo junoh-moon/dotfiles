@@ -1,7 +1,5 @@
 - When you cannot implement the code immediately, explicitly indicate that it has not been implemented. For example, use `NotImplementedError` in Python or `TODO` in Kotlin. Do not hardcode to hide the problem.
 - Create a todo list first when working on complex tasks to track progress and remain on track.
-- When you cannot implement the code immediately, explicitly indicate that it has not been implemented. For example, use `NotImplementedError` in Python or `TODO` in Kotlin. Do not hardcode to hide the problem.
-- Create a todo list first when working on complex tasks to track progress and remain on track.
 - For database access tasks (schema analysis, sample data, etc.):
     - Use official Docker client images (postgres, mysql, mongo) for direct connection
     - For K8s cluster databases: either port-forward + local access or temporary client pods
