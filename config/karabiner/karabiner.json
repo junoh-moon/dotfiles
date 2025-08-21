@@ -614,7 +614,7 @@
                                             "^org\\.gnu\\.AquamacsEmacs$",
                                             "^org\\.gnu\\.Aquamacs$",
                                             "^org\\.pqrs\\.unknownapp.conkeror$",
-                                            "^com\.jetbrains\\..*$"
+                                            "^com\\.jetbrains\\..*$"
                                         ],
                                         "type": "frontmost_application_unless"
                                     }
@@ -675,7 +675,7 @@
                                             "^org\\.gnu\\.AquamacsEmacs$",
                                             "^org\\.gnu\\.Aquamacs$",
                                             "^org\\.pqrs\\.unknownapp.conkeror$",
-                                            "^com\.jetbrains\\..*$"
+                                            "^com\\.jetbrains\\..*$"
                                         ],
                                         "type": "frontmost_application_unless"
                                     }
@@ -736,7 +736,7 @@
                                             "^org\\.gnu\\.AquamacsEmacs$",
                                             "^org\\.gnu\\.Aquamacs$",
                                             "^org\\.pqrs\\.unknownapp.conkeror$",
-                                            "^com\.jetbrains\\..*$"
+                                            "^com\\.jetbrains\\..*$"
                                         ],
                                         "type": "frontmost_application_unless"
                                     }
@@ -1064,7 +1064,7 @@
                                             "^org\\.gnu\\.Aquamacs$",
                                             "^org\\.pqrs\\.unknownapp.conkeror$",
                                             "^org\\.jkiss\\.dbeaver\\.core\\.product$",
-                                            "^com\.jetbrains\\..*$"
+                                            "^com\\.jetbrains\\..*$"
                                         ],
                                         "type": "frontmost_application_unless"
                                     }
@@ -1128,7 +1128,7 @@
                                             "^org\\.pqrs\\.unknownapp.conkeror$",
                                             "^org\\.jkiss\\.dbeaver\\.core\\.product$",
                                             "^com\\.feralinteractive\\.xcom2$",
-                                            "^com\.jetbrains\\..*$"
+                                            "^com\\.jetbrains\\..*$"
                                         ],
                                         "type": "frontmost_application_unless"
                                     }
