@@ -213,6 +213,10 @@ Plug 'vim-test/vim-test'
 nmap <silent> <leader>t  :write! <bar> TestNearest <CR>
 nmap <silent> <leader>T  :write! <bar> TestFile    <CR>
 
+" coc-sh가 .env를 shell script로 인식한다. 이 경우 unused variable로 모든
+" 변수를 인식하여 가독성이 떨어지는 문제를 회피하기 위함이다.
+autocmd BufNewFile,BufRead .env,.*.env set filetype=env
+
 aug indentation
 	autocmd FileType bazel setlocal tabstop=4 softtabstop=4 shiftwidth=4 noexpandtab
 
