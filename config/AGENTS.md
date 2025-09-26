@@ -1,3 +1,5 @@
+# Rules for LLM Agents
+
 - When you cannot implement the code immediately, explicitly indicate that it has not been implemented. For example, use `NotImplementedError` in Python or `TODO` in Kotlin. Do not hardcode to hide the problem.
 - Create a todo list first when working on complex tasks to track progress and remain on track.
 - For database access tasks (schema analysis, sample data, etc.):
@@ -9,14 +11,31 @@
     - In manual mode: suggest to the user to create a git commit
     - In `auto-accept edits on` mode: proactively create a git commit with appropriate message
     - Consider a checkpoint complete when: a TODO is fully implemented, a feature works without errors, or a bug fix is verified
-- When creating or editing a Github pull request (PR), write body in Korean and omit the "Test plan" section.
 - Do not attempt to run the `sudo` command yourself; instead, ask the user to run it manually and wait for their result.
 - Always use context7 for up-to-date documentation on third party code.
+- Prefer `jq` for JSON and `yq` for YAML file operations (these tools are pre-installed). Use Python only for complex transformations that these tools cannot handle.
+- When unsure about CLI command usage, actively use help options (`--help`, `-h`, `help` subcommand) to explore available arguments and syntax.
+- For one-time scripts, use inline execution with heredoc (e.g., `bash <<'EOF'...EOF`, `python3 <<'EOF'...EOF`) instead of creating separate script files. Only create script files when reuse is expected.
 
+## Commit Message Convention
 
+Based on the following git diff of staged changes, generate a conventional commit message with a clear subject line (max 72 chars) and body (wrapped at 72 chars).
+The message should clearly explain what changed and why.
 
+Format the commit message as plain text (no markdown):
+- First line: conventional commit format (feat:, fix:, docs:, etc.) under 72 chars in English
+- Empty line
+- Body: wrapped at 72 chars, explaining what and why in Korean
 
-## JIRA Ticket Creation (MCP Tools)
+## Pull Request Rules
+
+- Use `gh` command to create, read, and edit pull requests (PRs).
+- When creating or editing a Github pull request (PR), write body in Korean and omit the "Test plan" section.
+- Do not just list a series of commit messages in a PR body; instead, group commits by context.
+
+## JIRA Ticket Creation
+
+If you have JIRA tools, consider the following information.
 
 ### Tool Name Format
 - Correct: `mcp__mcp-jira__jira_create_issue` (jira_ prefix required!)
@@ -49,4 +68,3 @@ Use `jira_batch_create_issues` for multiple tickets, but Epic Link and Sprint re
 ### Debugging
 - Check existing ticket structure: `jira_get_issue(issue_key="KEY", fields="*all")`
 - Check sprint info via board API: `jira_get_board_issues(board_id="367", jql="key=KEY", fields="customfield_10020")`
-

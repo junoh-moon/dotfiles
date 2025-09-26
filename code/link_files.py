@@ -135,7 +135,7 @@ class FileLinker(Script):
         self.shell.exec_list(
             "Linking claude code configs",
             f"mkdir -p {HOME}/.claude",
-            f'ln -fs "{proj_root}"/config/claude-code/CLAUDE.md {HOME}/.claude/CLAUDE.md',
+            f'ln -fs "{proj_root}"/config/AGENTS.md {HOME}/.claude/CLAUDE.md',
             f'ln -fs "{proj_root}"/config/claude-code/settings.json {HOME}/.claude/settings.json',
         )
         with open(f"{proj_root}/config/claude-code/mcp.json") as f:
