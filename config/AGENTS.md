@@ -16,6 +16,7 @@
 - Prefer `jq` for JSON and `yq` for YAML file operations (these tools are pre-installed). Use Python only for complex transformations that these tools cannot handle.
 - When unsure about CLI command usage, actively use help options (`--help`, `-h`, `help` subcommand) to explore available arguments and syntax.
 - For one-time scripts, use inline execution with heredoc (e.g., `bash <<'EOF'...EOF`, `python3 <<'EOF'...EOF`) instead of creating separate script files. Only create script files when reuse is expected.
+- You can use `gemini` agent by running `gemini -p '...'` cli command. Be aware that gemini cannot remember the context, thus you have to prepend the conversation context every time.
 
 ## Commit Message Convention
 

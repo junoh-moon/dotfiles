@@ -17,6 +17,7 @@
       "Bash(fd:*)",
       "Bash(file:*)",
       "Bash(find:*)",
+      "Bash(gemini -p:*)",
       "Bash(git add:*)",
       "Bash(git push:*)",
       "Bash(grep:*)",
