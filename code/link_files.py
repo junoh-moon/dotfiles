@@ -54,7 +54,7 @@ class FileLinker(Script):
             f'ln -fs "{proj_root}"/tasks.ini {HOME}/.vim/tasks.ini',
         )
 
-        self._setup_claude_code()
+        self._setup_agentic_cli()
 
         if not os.path.islink(f"{HOME}/.config"):
             self.shell.exec(
@@ -125,34 +125,38 @@ class FileLinker(Script):
 
         return
 
-    def _setup_claude_code(self):
+    def _setup_agentic_cli(self):
         HOME = self.HOME
         proj_root = self.proj_root
 
-        if not self.shell.run("which -a claude")[0]:
-            return
-
-        self.shell.exec_list(
-            "Linking claude code configs",
-            f"mkdir -p {HOME}/.claude",
-            f'ln -fs "{proj_root}"/config/AGENTS.md {HOME}/.claude/CLAUDE.md',
-            f'ln -fs "{proj_root}"/config/claude-code/settings.json {HOME}/.claude/settings.json',
-        )
-        with open(f"{proj_root}/config/claude-code/mcp.json") as f:
-            mcp_list = json.load(f)
-        remove_commands = [
-            f"claude mcp remove --scope user -- {name} || echo '{name} is already removed'"
-            for name in mcp_list.keys()
-        ]
-        add_commands = [
-            f"claude mcp add-json --scope user -- {name} '{json.dumps(json_str)}' "
-            for name, json_str in mcp_list.items()
-        ]
-        self.shell.exec_list(
-            "Installing mcp servers for claude code",
-            *remove_commands,
-            *add_commands,
-        )
+        if self.shell.run("which -a claude")[0]:
+            self.shell.exec_list(
+                "Linking claude code configs",
+                f"mkdir -p {HOME}/.claude",
+                f'ln -fs "{proj_root}"/config/AGENTS.md {HOME}/.claude/CLAUDE.md',
+                f'ln -fs "{proj_root}"/config/claude-code/settings.json {HOME}/.claude/settings.json',
+            )
+            with open(f"{proj_root}/config/claude-code/mcp.json") as f:
+                mcp_list = json.load(f)
+            remove_commands = [
+                f"claude mcp remove --scope user -- {name} || echo '{name} is already removed'"
+                for name in mcp_list.keys()
+            ]
+            add_commands = [
+                f"claude mcp add-json --scope user -- {name} '{json.dumps(json_str)}' "
+                for name, json_str in mcp_list.items()
+            ]
+            self.shell.exec_list(
+                "Installing mcp servers for claude code",
+                *remove_commands,
+                *add_commands,
+            )
+        if self.shell.run("which -a codex")[0]:
+            self.shell.exec_list(
+                "Linking codex cli configs",
+                f"mkdir -p {HOME}/.codex",
+                f'ln -fs "{proj_root}"/config/AGENTS.md {HOME}/.codex/AGENTS.md',
+            )
         return
 
     def _is_wsl(self):
