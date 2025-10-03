@@ -46,7 +46,7 @@ class LinuxAMD64(Script, GithubDownloadable):
         self.shell.exec(
             "Installing MinySubtitleConverter",
             self.github_dl_cmd(
-                "snowphone/MinySubtitleConverter",
+                "junoh-moon/MinySubtitleConverter",
                 "linux-amd64.tar.gz",
             ),
         )
@@ -79,7 +79,7 @@ class LinuxAMD64(Script, GithubDownloadable):
         self.shell.exec_list(
             "Installing subtitle matcher",
             "rm -rf /tmp/subtitle_matcher",
-            "git clone https://github.com/snowphone/Subtitle-Matcher.git /tmp/subtitle_matcher",
+            "git clone https://github.com/junoh-moon/Subtitle-Matcher.git /tmp/subtitle_matcher",
             "cd /tmp/subtitle_matcher && make install",
             "python3 -m pip install --upgrade tabulate",
             "rm -rf /tmp/subtitle_matcher",

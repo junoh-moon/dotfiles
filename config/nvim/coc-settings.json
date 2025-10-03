@@ -20,7 +20,7 @@
 	"java.format.comments.enabled": true,
 	"java.format.enabled": true,
 	"java.format.settings.profile": "FormattingStyle",
-	"java.format.settings.url": "https://gist.githubusercontent.com/snowphone/3687b5a6bee7ad315cf6417e2cd0dddf/raw/26b97d16e2108032c8abdd8c2e8c92a13211916d/formatting-style.xml",
+	"java.format.settings.url": "https://gist.githubusercontent.com/junoh-moon/3687b5a6bee7ad315cf6417e2cd0dddf/raw/26b97d16e2108032c8abdd8c2e8c92a13211916d/formatting-style.xml",
 	"languageserver": {
 		"bazel": {
 			"args": [],

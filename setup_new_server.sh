@@ -45,7 +45,7 @@ sudo apt-get install -y \
 # xorg
 
 cargo install macchina
-git clone https://github.com/snowphone/cloudflare-cli && cd cloudflare-cli && make install
+git clone https://github.com/junoh-moon/cloudflare-cli && cd cloudflare-cli && make install
 
 # 부팅시 네트워크 잡느라 너무 느려지는 상황 방지
 systemctl mask systemd-networkd-wait-online.service
