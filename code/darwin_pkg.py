@@ -179,11 +179,6 @@ class Mac(Script, GithubDownloadable):
         KotlinLspInstaller(self.args).run()
 
         self.shell.exec(
-            "Installing commitgpt",
-            f"cargo install --force --git https://github.com/snowphone/CommitGPT",
-        )
-
-        self.shell.exec(
             "Installing macchina",
             f"cargo install --force macchina",
         )

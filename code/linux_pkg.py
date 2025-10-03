@@ -86,11 +86,6 @@ class LinuxAMD64(Script, GithubDownloadable):
         )
 
         self.shell.exec(
-            "Installing commitgpt",
-            f"source $HOME/.cargo/env && cargo install --force --git https://github.com/snowphone/CommitGPT",
-        )
-
-        self.shell.exec(
             "Installing macchina",
             f"source $HOME/.cargo/env && cargo install --force macchina",
         )

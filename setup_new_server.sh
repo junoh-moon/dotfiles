@@ -35,19 +35,16 @@ sudo apt install --install-recommends linux-generic-hwe-22.04
 : <<'COMMENT'
 | Item            | Description                                         |
 |-----------------|-----------------------------------------------------|
-| libssl-dev      | Prerequisite for commitgpt                          |
 | molly-guard     | Prevent accidental shutdown/reboot                  |
 | network-manager | Wlan support                                        |
 | xorg            | Full ububtu-server image already includes X11 server|
 COMMENT
 sudo apt-get install -y \
-	libssl-dev \
 	molly-guard \
 	network-manager
 # xorg
 
 cargo install macchina
-cargo install --git https://github.com/snowphone/CommitGPT
 git clone https://github.com/snowphone/cloudflare-cli && cd cloudflare-cli && make install
 
 # 부팅시 네트워크 잡느라 너무 느려지는 상황 방지
