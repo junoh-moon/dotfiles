@@ -87,7 +87,7 @@ class LinuxAMD64(Script, GithubDownloadable):
 
         self.shell.exec(
             "Installing macchina",
-            f"source $HOME/.cargo/env && cargo install --force macchina",
+            self.github_dl_cmd("Macchina-CLI/macchina", "linux-gnu-x86_64.tar.gz"),
         )
 
         self.shell.exec(

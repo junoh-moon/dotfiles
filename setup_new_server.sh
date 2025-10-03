@@ -44,7 +44,7 @@ sudo apt-get install -y \
 	network-manager
 # xorg
 
-cargo install macchina
+curl -L $(curl -s https://api.github.com/repos/Macchina-CLI/macchina/releases/latest | grep browser_download_url | grep -ioe 'https://.*linux-gnu-x86_64.tar.gz' | head -n 1) | tar xz -C ~/.local/bin
 git clone https://github.com/junoh-moon/cloudflare-cli && cd cloudflare-cli && make install
 
 # 부팅시 네트워크 잡느라 너무 느려지는 상황 방지

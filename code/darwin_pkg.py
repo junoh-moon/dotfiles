@@ -70,6 +70,7 @@ class DarwinPackageManager(PackageManager):
             "k9s",
             "lbzip2",
             "llvm",
+            "macchina",
             "make",
             "mmv",
             "multitail",
@@ -177,11 +178,6 @@ class Mac(Script, GithubDownloadable):
         )
 
         KotlinLspInstaller(self.args).run()
-
-        self.shell.exec(
-            "Installing macchina",
-            f"cargo install --force macchina",
-        )
 
         self.shell.exec(
             "Installing pudb, a python debugger", "pip3 install --user pudb"
