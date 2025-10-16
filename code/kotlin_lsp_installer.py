@@ -37,11 +37,15 @@ class KotlinLspInstaller(Script, GithubDownloadable):
     def run(self):
         version = self._get_latest_version()
         kotlin_lsp_link = f"https://download-cdn.jetbrains.com/kotlin-lsp/{version}/kotlin-{version}.zip"
+        kotlin_lsp_dir = f"{self.HOME}/.local/kotlin-lsp"
         self.shell.exec_list(
             f"Installing kotlin lsp (v{version})",
+            f"rm -rf {kotlin_lsp_dir}",
+            f"mkdir -p {kotlin_lsp_dir}",
             f"curl -Lfo /tmp/kotlin-lsp.zip '{kotlin_lsp_link}'",
-            f"unzip -o /tmp/kotlin-lsp.zip -d {self.HOME}/.local/bin/",
-            f"chmod +x {self.HOME}/.local/bin/kotlin-lsp.sh",
+            f"unzip -o /tmp/kotlin-lsp.zip -d {kotlin_lsp_dir}/",
+            f"chmod +x {kotlin_lsp_dir}/kotlin-lsp.sh",
+            f"ln -sf {kotlin_lsp_dir}/kotlin-lsp.sh {self.HOME}/.local/bin/kotlin-lsp.sh",
             "rm -f /tmp/kotlin-lsp.zip",
         )
 
