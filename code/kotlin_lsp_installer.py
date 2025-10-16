@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import json
 from argparse import Namespace
 from pathlib import Path
 from sys import stderr
@@ -45,3 +44,7 @@ class KotlinLspInstaller(Script, GithubDownloadable):
             f"chmod +x {self.HOME}/.local/bin/kotlin-lsp.sh",
             "rm -f /tmp/kotlin-lsp.zip",
         )
+
+if __name__ == "__main__":
+    from argparse import ArgumentParser
+    KotlinLspInstaller(ArgumentParser().parse_args()).run()
