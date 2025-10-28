@@ -1,0 +1,25 @@
+#!/bin/sh
+# Convert newline-separated strings to JSON array
+
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    cat <<EOF
+Usage: to_list.sh < input.txt
+
+Converts newline-separated strings to a JSON array.
+
+Example:
+  Input:
+    hello
+    world
+    test
+
+  Output:
+    ["hello","world","test"]
+
+  Command:
+    echo -e "hello\nworld\ntest" | $0
+EOF
+    exit 0
+fi
+
+jq -R -s 'split("\n")[:-1]'
