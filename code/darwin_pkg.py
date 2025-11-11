@@ -91,6 +91,7 @@ class DarwinPackageManager(PackageManager):
             "shfmt",
             "shellcheck",
             "sponge",
+            "task-spooler",
             "the_silver_searcher",
             "tmux",
             "translate-shell",

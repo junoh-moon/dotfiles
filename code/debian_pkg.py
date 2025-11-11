@@ -63,6 +63,7 @@ class DebianPackageManager(PackageManager):
     @property
     def pkgs(self):
         pkgs = [
+            "at",
             "automake",
             "bear",
             "bfs",
@@ -110,6 +111,7 @@ class DebianPackageManager(PackageManager):
             "silversearcher-ag",
             "sshpass",
             "tar",
+            "task-spooler",
             "tmux",
             "translate-shell",
             "traceroute",
