@@ -127,7 +127,7 @@
       "Read(//Users/junoh.moon/Workspaces/**)",
       "Read(//Users/junoh.moon/Workspaces/platform-service/**)",
       "Read(//Users/junoh.moon/Workspaces/platform-service/project/**)",
-      "Skill(elasticsearch-logs)",
+      "Skill(elasticsearch-logs)"
     ],
     "deny": [
       "Bash(git add -A)",
