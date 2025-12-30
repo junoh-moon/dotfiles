@@ -39,10 +39,6 @@ class DebianPreparation(Script):
         )
 
         self.shell.sudo_exec(
-            "Adding vim repository", "add-apt-repository -y ppa:jonathonf/vim"
-        )
-
-        self.shell.sudo_exec(
             "Adding golang repository",
             "add-apt-repository -y ppa:longsleep/golang-backports",
         )
