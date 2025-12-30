@@ -52,6 +52,12 @@ class DebianPreparation(Script):
                 "Adding gnome-epub-thumbnailer repository",
                 "add-apt-repository -y ppa:ubuntuhandbook1/apps",
             )
+
+        if self.args.elixir:
+            self.shell.sudo_exec(
+                "Enabling universe repository",
+                "add-apt-repository -y universe",
+            )
         return
 
 
@@ -158,25 +164,7 @@ class DebianPackageManager(PackageManager):
         if self.args.misc:
             pkgs += ["figlet", "lolcat", "toilet", "img2pdf"]
         if self.args.elixir:
-            pkgs += [
-                "libssl-dev",
-                "automake",
-                "autoconf",
-                "fop",
-                "libgl1-mesa-dev",
-                "libglu1-mesa-dev",
-                "libncurses-dev",
-                "libncurses5-dev",
-                "libpng-dev",
-                "libssh-dev",
-                "libwxgtk-webview3.0-gtk3-dev",
-                "libwxgtk3.0-gtk3-dev",
-                "libxml2-utils",
-                "m4",
-                "openjdk-11-jdk",
-                "unixodbc-dev",
-                "xsltproc",
-            ]
+            pkgs += ["elixir"]
         if self.args.golang:
             pkgs += ["golang-go"]
         return pkgs

@@ -6,7 +6,6 @@ from argparse import (
 )
 from pathlib import Path
 
-from elixir_installer import ElixirInstaller
 from java_installer import JavaInstaller
 from kotlin_lsp_installer import KotlinLspInstaller
 from node_installer import NodeInstaller
@@ -183,9 +182,6 @@ class LinuxAMD64(Script, GithubDownloadable):
             "Removing auxiliary files",
             f"rm -rf {self.HOME}/.local/bin/autocomplete {self.HOME}/.local/bin/completion {self.HOME}/.local/bin/LICENSE* {self.HOME}/.local/bin/*.md {self.HOME}/.local/bin/doc",
         )
-
-        if self.args.elixir:
-            ElixirInstaller(self.args).run()
 
         NodeInstaller(self.args).run()
 

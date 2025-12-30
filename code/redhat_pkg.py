@@ -30,6 +30,8 @@ class RedhatPackageManager(PackageManager):
             pkgs.append("boost-*")
         if self.args.java:
             pkgs += ["java-11-openjdk", "java-11-openjdk-devel"]
+        if self.args.elixir:
+            print("Warning: Elixir is not supported on RedHat (EPEL version outdated, Erlang Solutions unstable)")
 
         return pkgs
 

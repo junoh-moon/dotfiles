@@ -119,6 +119,8 @@ class DarwinPackageManager(PackageManager):
             print("Misc is not supported")
         if self.args.golang:
             pkgs.append("go")
+        if self.args.elixir:
+            pkgs += ["erlang", "elixir"]
         return pkgs
 
     def do_misc(self):
