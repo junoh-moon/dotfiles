@@ -98,3 +98,7 @@ Use `jira_batch_create_issues` for multiple tickets, but Epic Link and Sprint re
 ### Debugging
 - Check existing ticket structure: `jira_get_issue(issue_key="KEY", fields="*all")`
 - Check sprint info via board API: `jira_get_board_issues(board_id="367", jql="key=KEY", fields="customfield_10020")`
+
+### Miscellaneous
+- If current working directory is inside `/mnt/elements/micro_services`, DO NOT USE SEARCH/FIND RECURSIVELY WITHOUT MAX-DEPTH LIMIT
+
