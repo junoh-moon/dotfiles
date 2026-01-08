@@ -8,6 +8,10 @@ class RedhatPreparation(Script):
     def __init__(self, args: Namespace):
         super().__init__(args)
 
+    def run(self) -> None:
+        # No-op
+        return
+
 
 class RedhatPackageManager(PackageManager):
     @property
