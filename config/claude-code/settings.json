@@ -183,5 +183,8 @@
   },
   "promptSuggestionEnabled": false,
   "alwaysThinkingEnabled": true,
-  "model": "opus"
+  "model": "opus",
+  "env": {
+	  "ENABLE_TOOL_SEARCH": true
+  }
 }
