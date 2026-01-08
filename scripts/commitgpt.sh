@@ -26,11 +26,11 @@ generate_commit_message() {
     fi
     
     # Use -c flag for regenerate to maintain session
-    local claude_cmd="claude"
+    local claude_cmd="claude --model=haiku"
     if [ "$continue_session" = "true" ]; then
-        claude_cmd="claude --continue"
+        claude_cmd="claude --model=haiku --continue"
 	else
-        claude_cmd="claude"
+        claude_cmd="claude --model=haiku"
     fi
 
     # Get the staged diff and generate commit message
