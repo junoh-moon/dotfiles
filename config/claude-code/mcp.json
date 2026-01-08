@@ -1,34 +1,34 @@
 {
-  "playwright-browser": {
+  "playwright": {
     "type": "stdio",
     "command": "uvx",
     "args": [
       "playwright-server"
     ]
   },
-  "sequential-thinking": {
-    "type": "stdio",
-    "command": "npx",
-    "args": [
-      "-y",
-      "@modelcontextprotocol/server-sequential-thinking"
-    ]
+  "context7": {
+    "type": "http",
+    "url": "https://mcp.context7.com/mcp"
   },
-  "time": {
+  "notion": {
+    "type": "http",
+    "url": "https://mcp.notion.com/mcp"
+  },
+  "codex": {
+    "type": "stdio",
+    "command": "codex",
+    "args": ["mcp-server"]
+  },
+  "serena": {
     "type": "stdio",
     "command": "uvx",
     "args": [
-      "mcp-server-time",
-      "--local-timezone",
-      "Asia/Seoul"
-    ]
-  },
-  "context7": {
-    "type": "stdio",
-    "command": "npx",
-    "args": [
-      "-y",
-      "@upstash/context7-mcp"
+      "--from", "git+https://github.com/oraios/serena",
+      "serena",
+      "start-mcp-server",
+      "--context", "claude-code",
+      "--project-from-cwd",
+      "--enable-web-dashboard", "False"
     ]
   }
 }
