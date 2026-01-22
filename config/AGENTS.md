@@ -13,13 +13,6 @@
 - To access Github information, do not use the WebFetch tool; use `gh` to reuse the existing authenticated session.
 - At the start of each session, before running any shell commands, check the $SHELL environment variable once to determine the current shell.
 
-## Pull Request Rules
-
-- Use `gh` command to create, read, and edit pull requests (PRs).
-- When creating or editing a Github pull request (PR), write body in Korean and omit the "Test plan" section.
-- Do not just list a series of commit messages in a PR body; instead, group commits by context.
-- When you create a PR request on `bucketplace` organization, add `PR-by-AI` label.
-
 ### Miscellaneous
 - If current working directory is inside `/mnt/elements/micro_services`, DO NOT USE SEARCH/FIND RECURSIVELY WITHOUT MAX-DEPTH LIMIT
 
