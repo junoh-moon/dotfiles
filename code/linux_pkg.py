@@ -90,6 +90,11 @@ class LinuxAMD64(Script, GithubDownloadable):
         )
 
         self.shell.exec(
+            "Installing starship",
+            self.github_dl_cmd("starship/starship", "x86_64-unknown-linux-musl.tar.gz"),
+        )
+
+        self.shell.exec(
             "Installing pudb, a python debugger", "pip3 install --upgrade pudb"
         )
         self.shell.exec_list(
