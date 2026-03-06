@@ -1,16 +1,4 @@
 {
-  "hooks": {
-    "UserPromptSubmit": [
-    {
-      "hooks": [
-        {
-          "type": "command",
-          "command": "~/.claude/hooks/skill-forced-eval-hook.sh"
-        }
-      ]
-    }
-  ]
-  },
   "permissions": {
     "allow": [
       "Bash(./gradlew:*)",
@@ -197,6 +185,6 @@
   "alwaysThinkingEnabled": true,
   "model": "opus",
   "env": {
-    "ENABLE_TOOL_SEARCH": true
+	  "ENABLE_TOOL_SEARCH": true
   }
 }

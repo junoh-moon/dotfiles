@@ -136,18 +136,6 @@ class FileLinker(Script):
                 f'ln -fs "{proj_root}"/config/AGENTS.md {HOME}/.claude/CLAUDE.md',
                 f'ln -fs "{proj_root}"/config/claude-code/settings.json {HOME}/.claude/settings.json',
             )
-            if not os.path.islink(f"{HOME}/.claude/hooks"):
-                self.shell.exec(
-                    "Linking claude hooks",
-                    f"""
-                    if [ -L {HOME}/.claude/hooks ]; then
-                        unlink {HOME}/.claude/hooks
-                    else
-                        rm -rf {HOME}/.claude/hooks
-                    fi && \
-                    ln -s "{proj_root}/config/claude-code/hooks" {HOME}/.claude/hooks
-                    """,
-                )
             with open(f"{proj_root}/config/claude-code/mcp.json") as f:
                 mcp_list = json.load(f)
             remove_commands = [
