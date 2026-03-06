@@ -1,4 +1,5 @@
 unsetopt BEEP	# disable bell
+
 setopt correct
 setopt globdots
 setopt histignoredups
@@ -16,12 +17,6 @@ compinit
 
 source $HOME/.common.shrc
 
-# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
-# Initialization code that may require console input (password prompts, [y/n]
-# confirmations, etc.) must go above this block; everything else may go below.
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
-fi
 
 
 
@@ -55,7 +50,6 @@ if ! zgen saved; then
   zgen load zsh-users/zsh-autosuggestions
   zgen load zsh-users/zsh-completions
   zgen load RobSis/zsh-completion-generator		# compgen <program> to parse, and compinit then to apply
-  zgen load romkatv/powerlevel10k powerlevel10k
   zgen load IngoMeyer441/zsh-easy-motion
 
 
@@ -95,6 +89,5 @@ if command -v fzf > /dev/null 2>&1; then
 	source <(fzf --zsh)
 fi
 
-# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-
+export STARSHIP_CONFIG="$HOME/.dotfiles/config/starship/starship.toml"
+eval "$(starship init zsh)"
