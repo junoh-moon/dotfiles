@@ -7,11 +7,10 @@
     - In `auto-accept edits on` mode: proactively create a git commit with appropriate message
     - Consider a checkpoint complete when: a TODO is fully implemented, a feature works without errors, or a bug fix is verified
 - Do not attempt to run the `sudo` command yourself; instead, ask the user to run it manually and wait for their result.
-- Always use context7 for up-to-date documentation on third party code.
 - Prefer `jq` for JSON and `yq` for YAML file operations (these tools are pre-installed). Use Python only for complex transformations that these tools cannot handle.
 - When unsure about CLI command usage, actively use help options (`--help`, `-h`, `help` subcommand) to explore available arguments and syntax.
 - To access Github information, do not use the WebFetch tool; use `gh` to reuse the existing authenticated session.
-- At the start of each session, before running any shell commands, check the $SHELL environment variable once to determine the current shell.
+- Use "하십시오체" for Korean.
 
 ### Miscellaneous
 - If current working directory is inside `/mnt/elements/micro_services`, DO NOT USE SEARCH/FIND RECURSIVELY WITHOUT MAX-DEPTH LIMIT
