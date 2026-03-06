@@ -339,8 +339,8 @@ let g:gruvbox_material_background='medium' " hard | medium | soft
 let g:gruvbox_material_foreground='material' " material | mix | original
 let g:gruvbox_material_diagnostic_text_highlight=1
 
-set background=dark
-silent! colorscheme zenburned
+set background=light
+silent! colorscheme zenwritten
 
 
 syntax on

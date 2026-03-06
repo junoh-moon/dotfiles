@@ -75,7 +75,7 @@ if command -v prename >/dev/null 2>&1; then
 	alias rename=prename
 fi
 
-export BAT_THEME=gruvbox-dark
+export BAT_THEME=gruvbox-light
 
 alias c='clear'
 
