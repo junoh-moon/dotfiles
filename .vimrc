@@ -139,7 +139,7 @@ endif
 " # Syntax highlighting #
 " #######################
 if has("nvim")
-	Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
+	Plug 'nvim-treesitter/nvim-treesitter', {'branch': 'master', 'do': ':TSUpdate'}
 	Plug 'HiPhish/rainbow-delimiters.nvim'
 else
 	" Support highlighting for lots of languages
@@ -594,4 +594,3 @@ if has("patch-8.1.0360") || has("nvim")
 	set diffopt+=indent-heuristic
 	set diffopt+=algorithm:histogram
 endif
-
