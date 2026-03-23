@@ -258,6 +258,7 @@ class Mac(Script, GithubDownloadable):
             "gureumkim",
             "iina",
             "iterm2",
+            "ghostty",
             "itsycal",
             "jetbrains-toolbox",
             "karabiner-elements",
