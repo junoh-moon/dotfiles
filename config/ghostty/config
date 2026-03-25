@@ -2,4 +2,5 @@ font-family = Delugia Light
 font-size = 16
 theme = dark:Catppuccin Frappe,light:Catppuccin Latte
 macos-option-as-alt = true
+shell-integration-features = ssh-terminfo,ssh-env
 keybind = shift+enter=text:\n
