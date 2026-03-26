@@ -75,7 +75,6 @@ let g:coc_global_extensions = [
 			\'coc-rust-analyzer',
 			\'coc-sh',
 			\'coc-snippets',
-			\'coc-snippets',
 			\'coc-sql',
 			\'coc-sumneko-lua',
 			\'coc-terminal',
