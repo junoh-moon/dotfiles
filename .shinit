@@ -7,19 +7,19 @@ export MANPATH="$HOME"/.local/share/man:/usr/share/man:"$MANPATH"
 # set PATH so it includes user's private bin if it exists
 LOCALBIN="$HOME/.local/bin"
 case "$PATH" in
-"*$LOCALBIN*") ;;
+*"$LOCALBIN"*) ;;
 *) PATH="$LOCALBIN:$PATH" ;;
 esac
 
 SNAPBIN="/snap/bin"
 case "$PATH" in
-"*$SNAPBIN*") ;;
+*"$SNAPBIN"*) ;;
 *) PATH="$SNAPBIN:$PATH" ;;
 esac
 
 M1_SILICON_BREW_PATH="/opt/homebrew/bin"
 case "$PATH" in
-"*$M1_SILICON_BREW_PATH*") ;;
+*"$M1_SILICON_BREW_PATH"*) ;;
 *) PATH="$M1_SILICON_BREW_PATH:$PATH" ;;
 esac
 
