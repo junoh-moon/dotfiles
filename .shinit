@@ -23,6 +23,10 @@ case "$PATH" in
 *) PATH="$M1_SILICON_BREW_PATH:$PATH" ;;
 esac
 
+# Keep Go artifacts out of ~/go.
+export GOPATH="$HOME/.local/share/go"
+export GOBIN="$LOCALBIN"
+
 BREW_PACKAGES_PATH=$HOME/.paths
 if [ -f "$BREW_PACKAGES_PATH" ]; then
 	NEW_PATHS=$(cat "$BREW_PACKAGES_PATH")
