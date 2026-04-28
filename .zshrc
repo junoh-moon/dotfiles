@@ -12,6 +12,13 @@ ZSH_DISABLE_COMPFIX=true # Disable 'zsh compinit insecure directoreis' warning
 
 export PROMPT_EOL_MARK=''
 
+# venv activate가 PROMPT를 건드리지 못하게 막음.
+# oh-my-zsh의 virtualenvwrapper 플러그인이 starship init 전에 로드되어
+# workon_cwd → activate가 zsh 기본 PROMPT를 _OLD_VIRTUAL_PS1에 저장한 뒤,
+# 이후 cd 때 deactivate가 그 값으로 starship PROMPT를 덮어쓰는 문제 방지.
+# venv 표시는 starship의 [python] 모듈이 대신함.
+export VIRTUAL_ENV_DISABLE_PROMPT=1
+
 autoload -Uz compinit
 compinit
 
