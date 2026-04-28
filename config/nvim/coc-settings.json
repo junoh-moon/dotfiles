@@ -46,10 +46,12 @@
 			"filetypes": [
 				"kotlin"
 			],
-			"root_markers": [
+			"rootPatterns": [
 				"build.gradle",
 				"build.gradle.kts",
-				"pom.xml"
+				"pom.xml",
+				"settings.gradle",
+				"settings.gradle.kts"
 			]
 		},
 		"ocaml-lsp": {
