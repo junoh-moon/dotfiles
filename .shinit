@@ -70,7 +70,6 @@ alias cls='clear'
 alias vi='vim'
 alias svi='sudo vi'
 alias vis='vim "+set si"'
-alias tmux='tmux -2'              #force 256 colors
 alias psed='perl -pe'             #sed with pcre support
 alias fd='fd --hidden'            #find dotfiles as well
 alias rg='rg --auto-hybrid-regex' #Always allow look-ahead/behind
