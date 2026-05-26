@@ -5,6 +5,7 @@
 
 .venv/
 
+.serena/
 config/coc
 config/dconf
 config/memos.json
@@ -44,3 +45,16 @@ config/MusicBrainz/
 config/gpt4all.io/
 config/raycast/
 config/zed/
+config/Cursor/
+config/agents/
+config/frida/
+config/gh/
+config/git/
+config/menus/
+config/mole/
+config/fcitx5/
+config/gedit/
+config/gh/
+config/git/
+config/ibus/
+config/libdyson/
