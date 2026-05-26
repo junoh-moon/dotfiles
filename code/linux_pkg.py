@@ -37,9 +37,13 @@ class LinuxAMD64(Script, GithubDownloadable):
             "pip3 install --upgrade visidata",
         )
 
-        self.shell.sudo_exec(
+        self.shell.exec(
             "Installing tldr",
-            "snap install tldr",
+            self.github_dl_single_cmd(
+                "tealdeer-rs/tealdeer",
+                "linux-x86_64-musl",
+                f"{self.HOME}/.local/bin/tldr",
+            ),
         )
 
         self.shell.exec(
