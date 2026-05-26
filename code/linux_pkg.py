@@ -148,9 +148,9 @@ class LinuxAMD64(Script, GithubDownloadable):
             "Installing btop++",
             self.github_dl_cmd(
                 "aristocratos/btop",
-                "x86_64-unknown-linux-musl.tbz",
+                "x86_64-unknown-linux-musl.tar.gz",
                 binpath="/tmp",
-                tar_extract_flags="xj",
+                tar_extract_flags="xz",
             ),
             "cd /tmp/btop && make install PREFIX=$HOME/.local",
             "rm -rf /tmp/btop",
