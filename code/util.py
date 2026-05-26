@@ -37,11 +37,10 @@ class GithubDownloadable:
         return self.dl_cmd(link, strip, binpath, tar_extract_flags)
 
     def github_dl_single_cmd(self, user_repo: str, suffix: str, fullpath: str):
-        """
-        It is almost same to `github_dl_cmd`,
-        but it downloads a single executable file and makes it executable."
-        """
-        return f"curl -L {self.get_download_link(user_repo, suffix)} -o {fullpath} && chmod +x {fullpath}"
+        link = self.get_download_link(user_repo, suffix)
+        if not link:
+            return "false"
+        return f"curl -L {link} -o {fullpath} && chmod +x {fullpath}"
 
     def get_download_link(self, user_repo: str, suffix: str):
         cmd = f"""curl -s https://api.github.com/repos/{user_repo}/releases/latest |
