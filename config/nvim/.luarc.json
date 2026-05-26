@@ -1,0 +1,9 @@
+{
+  "runtime.version": "LuaJIT",
+  "diagnostics.globals": ["vim", "await"],
+  "workspace.library": [
+    "${3rd}/luv/library",
+    "~/.local/share/nvim/runtime/lua"
+  ],
+  "workspace.checkThirdParty": false
+}
