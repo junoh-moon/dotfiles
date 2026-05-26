@@ -84,104 +84,80 @@ require('claudecode').setup({
 })
 
 ------------------
--- nvim-treesitter
+-- nvim-treesitter (main branch API)
 ------------------
-require("nvim-treesitter.configs").setup {
-	ensure_installed = {
-		"bash",
-		"bibtex",
-		"c",
-		"cmake",
-		"comment",
-		"cpp",
-		"css",
-		"dockerfile",
-		"elixir",
-		"erlang",
-		"git_config",
-		"git_rebase",
-		"gitattributes",
-		"gitcommit",
-		"gitignore",
-		"go",
-		"gomod",
-		"graphql",
-		"html",
-		"java",
-		"javascript",
-		"jsdoc",
-		"json",
-		"json5",
-		"jsonc",
-		"kotlin",
-		"latex",
-		"lua",
-		"luadoc",
-		"make",
-		"markdown",
-		"markdown_inline",
-		"passwd",
-		"perl",
-		"php",
-		"python",
-		"racket",
-		"regex",
-		"rust",
-		"scheme",
-		"scss",
-		"sql",
-		"toml",
-		"tsx",
-		"typescript",
-		"vim",
-		"vimdoc",
-		"yaml",
-	},
-	highlight = {
-		enable = true, -- false will disable the whole extension
-		additional_vim_regex_highlighting = false,
-	},
-	indent = {
-		enable = true,
-		disable = {
-			"bash",
-			"bibtex",
-			"c",
-			"cmake",
-			"comment",
-			"cpp",
-			"css",
-			"dockerfile",
-			"erlang",
-			"go",
-			"gomod",
-			"graphql",
-			"html",
-			"java",
-			"javascript",
-			"jsdoc",
-			"json",
-			"json5",
-			"jsonc",
-			"kotlin",
-			"latex",
-			"lua",
-			"make",
-			"perl",
-			"php",
-			"python",
-			"regex",
-			"rust",
-			"scss",
-			"starlark",
-			"toml",
-			"tsx",
-			"typescript",
-			"vim",
-			"yaml",
-		}
-	},
+-- Parsers to install. Installation runs async on first start after PlugUpdate.
+local ts_parsers = {
+	"bash",
+	"bibtex",
+	"c",
+	"cmake",
+	"comment",
+	"cpp",
+	"css",
+	"dockerfile",
+	"elixir",
+	"erlang",
+	"git_config",
+	"git_rebase",
+	"gitattributes",
+	"gitcommit",
+	"gitignore",
+	"go",
+	"gomod",
+	"graphql",
+	"html",
+	"java",
+	"javascript",
+	"jsdoc",
+	"json",
+	"json5",
+	"kotlin",
+	"latex",
+	"lua",
+	"luadoc",
+	"make",
+	"markdown",
+	"markdown_inline",
+	"passwd",
+	"perl",
+	"php",
+	"python",
+	"racket",
+	"regex",
+	"rust",
+	"scheme",
+	"scss",
+	"sql",
+	"toml",
+	"tsx",
+	"typescript",
+	"vim",
+	"vimdoc",
+	"yaml",
 }
+
+pcall(function()
+	require('nvim-treesitter').install(ts_parsers)
+end)
+
+-- Enable highlight per buffer when a parser is available.
+-- vim.treesitter.start() silently no-ops when no parser is installed for the filetype.
+vim.api.nvim_create_autocmd('FileType', {
+	pattern = '*',
+	callback = function(args)
+		pcall(vim.treesitter.start, args.buf)
+	end,
+})
+
+-- Enable treesitter-based indent only for filetypes whose indents.scm is
+-- meaningful in nvim-treesitter main (matches what was enabled on master).
+vim.api.nvim_create_autocmd('FileType', {
+	pattern = { 'elixir', 'sql' },
+	callback = function()
+		vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+	end,
+})
 
 require('rainbow-delimiters.setup').setup {
 	query = {
