@@ -3,6 +3,7 @@
   "diagnostics.globals": ["vim", "await"],
   "workspace.library": [
     "${3rd}/luv/library",
+    "/opt/homebrew/share/nvim/runtime/lua",
     "~/.local/share/nvim/runtime/lua"
   ],
   "workspace.checkThirdParty": false
