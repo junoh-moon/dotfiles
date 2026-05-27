@@ -18,7 +18,7 @@ class Vim(Script, GithubDownloadable):
         self.optional_cargo_path = f"{self.HOME}/.cargo/env"  # This variable is not used on MacOS since Rust in installed via homebrew.
 
     def run(self) -> None:
-        for cmd in ["npm", "python3 -m pip", "vim", "cargo"]:
+        for cmd in ["npm", "python3 -m pip"]:
             if not self._exists(cmd):
                 raise RuntimeError(f"{cmd} is required")
 
@@ -102,14 +102,30 @@ class Vim(Script, GithubDownloadable):
             ),
         )
 
+    def _install_tree_sitter_cli(self):
+        system = platform.system().lower()
+        machine = platform.machine().lower()
+
+        os_name = "macos" if system == "darwin" else "linux"
+        arch = "arm64" if machine in ("arm64", "aarch64") else "x64"
+        suffix = f"cli-{os_name}-{arch}.zip"
+
+        link = self.get_download_link("tree-sitter/tree-sitter", suffix)
+        if not link:
+            return
+        self.shell.exec_list(
+            "Installing tree-sitter cli",
+            f"curl -L {link} -o /tmp/tree-sitter-cli.zip",
+            f"unzip -o /tmp/tree-sitter-cli.zip -d {self.HOME}/.local/bin",
+            f"chmod +x {self.HOME}/.local/bin/tree-sitter",
+            "rm /tmp/tree-sitter-cli.zip",
+        )
+
     def _setup_for_nvim(self):
         HOME = self.HOME
         proj_root = self.proj_root
 
-        self.shell.exec(
-            "Installing tree-sitter cli",
-            self._sourced_cmd("cargo install tree-sitter-cli"),
-        )
+        self._install_tree_sitter_cli()
 
         self.shell.exec_list(
             "Installing plugins for neovim",
