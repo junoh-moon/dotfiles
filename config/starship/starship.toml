@@ -25,6 +25,7 @@ $conda\
 $time\
 [ ](fg:lavender)\
 $cmd_duration\
+$jobs\
 $line_break\
 $character"""
 
@@ -157,6 +158,12 @@ vimcmd_symbol = '[❮](bold fg:green)'
 vimcmd_replace_one_symbol = '[❮](bold fg:lavender)'
 vimcmd_replace_symbol = '[❮](bold fg:lavender)'
 vimcmd_visual_symbol = '[❮](bold fg:yellow)'
+
+[jobs]
+symbol = "✦ "
+number_threshold = 1
+symbol_threshold = 1
+format = "[$symbol$number]($style) "
 
 [cmd_duration]
 show_milliseconds = true
