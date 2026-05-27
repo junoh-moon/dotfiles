@@ -134,7 +134,16 @@ class FileLinker(Script):
                 "Linking claude code configs",
                 f"mkdir -p {HOME}/.claude",
                 f'ln -fs "{proj_root}"/config/AGENTS.md {HOME}/.claude/CLAUDE.md',
-                f'ln -fs "{proj_root}"/config/claude-code/settings.json {HOME}/.claude/settings.json',
+            )
+            target = f"{HOME}/.claude/settings.json"
+            managed = f"{proj_root}/config/claude-code/settings.managed.json"
+            self.shell.exec(
+                "Merging managed settings into claude code settings",
+                f"""
+                [ -L "{target}" ] && rm "{target}" || true
+                [ ! -f "{target}" ] && echo '{{}}' > "{target}" || true
+                jq -s '.[0] * .[1]' "{target}" "{managed}" > "{target}.tmp" && mv "{target}.tmp" "{target}"
+                """,
             )
             with open(f"{proj_root}/config/claude-code/mcp.json") as f:
                 mcp_list = json.load(f)

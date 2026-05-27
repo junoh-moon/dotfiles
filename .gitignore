@@ -7,6 +7,7 @@
 
 .serena/
 config/coc
+config/claude-code/settings.json
 config/dconf
 config/memos.json
 config/pulse
