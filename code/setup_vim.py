@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 
 import os
+import platform
 from argparse import (
     ArgumentParser,
     Namespace,
 )
 
 from script import Script
+from util import GithubDownloadable
 
 
-class Vim(Script):
+class Vim(Script, GithubDownloadable):
     def __init__(self, args: Namespace):
         super().__init__(args)
         self.nvm_path = f"{self.HOME}/.nvm/nvm.sh"
@@ -19,6 +21,8 @@ class Vim(Script):
         for cmd in ["npm", "python3 -m pip", "vim", "cargo"]:
             if not self._exists(cmd):
                 raise RuntimeError(f"{cmd} is required")
+
+        self._install_neovim()
 
         HOME = self.HOME
         proj_root = self.proj_root
@@ -77,6 +81,26 @@ class Vim(Script):
             )
 
         return
+
+    def _install_neovim(self):
+        system = platform.system().lower()
+        machine = platform.machine().lower()
+
+        if system == "darwin":
+            suffix = f"macos-{'arm64' if machine == 'arm64' else 'x86_64'}.tar.gz"
+        else:
+            suffix = f"linux-{'arm64' if machine in ('arm64', 'aarch64') else 'x86_64'}.tar.gz"
+
+        self._mkdir(f"{self.HOME}/.local")
+        self.shell.exec(
+            "Installing the latest stable neovim",
+            self.github_dl_cmd(
+                "neovim/neovim",
+                suffix=suffix,
+                strip=1,
+                binpath=f"{self.HOME}/.local",
+            ),
+        )
 
     def _setup_for_nvim(self):
         HOME = self.HOME

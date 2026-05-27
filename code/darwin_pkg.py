@@ -75,7 +75,6 @@ class DarwinPackageManager(PackageManager):
             "mmv",
             "multitail",
             "neofetch",
-            "neovim",
             "num-utils",
             "parallel",
             "pigz",

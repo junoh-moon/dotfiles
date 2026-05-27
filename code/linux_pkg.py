@@ -172,16 +172,6 @@ class LinuxAMD64(Script, GithubDownloadable):
             f"rm -rf {self.HOME}/.local/bin/manpages",
         )
 
-        self.shell.exec(
-            "Installing the latest stable neovim from Github repo",
-            self.github_dl_cmd(
-                "neovim/neovim",
-                suffix="linux-x86_64.tar.gz",
-                strip=1,
-                binpath=f"{self.HOME}/.local",
-            ),
-        )
-
         KotlinLspInstaller(self.args).run()
 
         if self.args.java:
