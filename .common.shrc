@@ -5,23 +5,8 @@ source "$HOME"/.shinit
 # Put all configurations that are not universally applicable into this file.
 [ -s "$HOME"/.machine_specific.shrc ] && source "$HOME"/.machine_specific.shrc
 
-zsh_completion_path=$HOME/.local/share/zsh/vendor-completions
-bash_completion_path=$HOME/.local/share/bash-completion/completions
-
-if [[ ! $fpath =~ $zsh_completion_path ]]; then
-	fpath=($zsh_completion_path $fpath)
-fi
-
-if [[ ! $FPATH =~ $bash_completion_path ]]; then
-	FPATH=$bash_completion_path:$FPATH
-fi
-
 alias ds="{du -sh *; du -sh ./} | sort -rh " #diskspace
 alias normalize_unicode='convmv -r -f utf-8 -t utf-8 --notest --nfc'
-
-palette() {
-	for i in {0..255}; do print -Pn "%K{$i}  %k%F{$i}${(l:3::0:)i}%f " ${${(M)$((i%6)):#3}:+$'\n'}; done
-}
 
 backup() {
 	case $1 in

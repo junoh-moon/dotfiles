@@ -19,6 +19,16 @@ export PROMPT_EOL_MARK=''
 # venv 표시는 starship의 [python] 모듈이 대신함.
 export VIRTUAL_ENV_DISABLE_PROMPT=1
 
+# Prepend user vendor completions to fpath so compinit scans them.
+zsh_completion_path="$HOME/.local/share/zsh/vendor-completions"
+if [ -d "$zsh_completion_path" ]; then
+	case ":$FPATH:" in
+		*":$zsh_completion_path:"*) ;;
+		*) fpath=("$zsh_completion_path" "${fpath[@]}") ;;
+	esac
+fi
+unset zsh_completion_path
+
 autoload -Uz compinit
 compinit
 
