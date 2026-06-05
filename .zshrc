@@ -33,11 +33,16 @@ export VIRTUAL_ENV_DISABLE_PROMPT=1
 zsh_completion_path="$HOME/.local/share/zsh/vendor-completions"
 [ -d "$zsh_completion_path" ] || mkdir -p "$zsh_completion_path"
 () {
-	local tool bin
+	local tool bin out cache
 	for tool in kubectl k9s helm; do
-		bin=$(command -v "$tool" 2>/dev/null) || continue
-		if [[ ! -f "$zsh_completion_path/_$tool" || "$bin" -nt "$zsh_completion_path/_$tool" ]]; then
-			"$tool" completion zsh > "$zsh_completion_path/_$tool" 2>/dev/null
+		bin=${commands[$tool]:A}   # resolved real path (follows symlinks) for accurate mtime
+		[ -n "$bin" ] || continue
+		cache="$zsh_completion_path/_$tool"
+		if [[ ! -s "$cache" || "$bin" -nt "$cache" ]]; then
+			# Capture first; only overwrite the cache on success + non-empty
+			# output, so a failed run never truncates a good cache (-> stale).
+			out=$("$tool" completion zsh 2>/dev/null) && [[ -n "$out" ]] \
+				&& print -r -- "$out" >| "$cache"
 		fi
 	done
 }
