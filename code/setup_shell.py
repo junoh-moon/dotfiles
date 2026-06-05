@@ -48,7 +48,7 @@ class ShellSwitcher(Script):
             # 
             # 문제상황:
             # macOS의 로그인 쉘에서 /etc/zprofile의 path_helper가 PATH를 재정렬하여
-            # /usr/bin 등 시스템 경로가 sdkman/nvm/rbenv 등의 버전 관리자보다 앞에 위치하게 됨
+            # /usr/bin 등 시스템 경로가 sdkman/fnm/rbenv 등의 버전 관리자보다 앞에 위치하게 됨
             # 
             # 해결방법:
             # path_helper 실행 전에 PATH를 비워서 재정렬할 사용자 경로가 없도록 함

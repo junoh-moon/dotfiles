@@ -230,8 +230,21 @@ if [ -d "$HOME/.cargo/bin" ]; then
 	PATH=$PATH:$HOME/.cargo/bin
 fi
 
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
+# fnm (Fast Node Manager). The binary lives in ~/.local/bin (already on PATH).
+# `fnm env` points PATH at the default node version eagerly and cheaply (~30ms,
+# vs nvm's ~370ms), so node/npm work from shell startup -- this is the key
+# difference from a lazy loader and avoids the wrong-node-on-PATH problem that
+# broke the earlier nvm lazy-load attempt. --use-on-cd auto-switches the version
+# on cd into a dir with .node-version/.nvmrc/package.json (nvm-compatible).
+if command -v fnm >/dev/null 2>&1; then
+	if [ -n "$ZSH_VERSION" ]; then
+		eval "$(fnm env --use-on-cd --shell zsh)"
+	elif [ -n "$BASH_VERSION" ]; then
+		eval "$(fnm env --use-on-cd --shell bash)"
+	else
+		eval "$(fnm env)"
+	fi
+fi
 export KUBECONFIG="$HOME"/.kube/config
 
 command -v javac >/dev/null 2>&1 && export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which javac))))

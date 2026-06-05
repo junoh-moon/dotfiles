@@ -1,35 +1,27 @@
 #!/usr/bin/env python3
+import platform
 from argparse import (
     ArgumentParser,
     Namespace,
 )
-from pathlib import Path
 
 from script import Script
+from util import GithubDownloadable
 
 
-class NodeInstaller(Script):
+class NodeInstaller(Script, GithubDownloadable):
     def __init__(self, args: Namespace):
         super().__init__(args)
-        self.HOME = Path.home()
 
     def run(self):
-        self.shell.exec(
-            "Installing nvm",
-            """
-            _NVM_VER=$(curl -s "https://api.github.com/repos/nvm-sh/nvm/releases/latest" | grep '"tag_name":' | cut -d '"' -f 4);
-            echo $_NVM_VER
-            curl -s -o- https://raw.githubusercontent.com/nvm-sh/nvm/$_NVM_VER/install.sh | PROFILE=/dev/null bash
-            """,
-            # Set PROFILE to /dev/null to not update .zshrc or .bashrc
-        )
+        self._install_fnm()
         self._sourced_exec(
-            "Installing nodejs lts via nvm",
-            f"nvm install --lts --reinstall-packages-from=current",
+            "Installing nodejs lts via fnm",
+            "fnm install --lts && fnm default lts-latest",
         )
         self._sourced_exec(
             "Installing yarn",
-            f"npm install --global yarn",
+            "npm install --global yarn",
         )
 
         if self.args.typescript:
@@ -39,8 +31,41 @@ class NodeInstaller(Script):
             )
         return
 
+    def _install_fnm(self):
+        "Download the fnm binary (distributed as a zip) into ~/.local/bin."
+        system = platform.system().lower()
+        machine = platform.machine().lower()
+        if system == "darwin":
+            asset = "fnm-macos.zip"
+        elif machine in ("arm64", "aarch64"):
+            asset = "fnm-arm64.zip"
+        elif machine.startswith("arm"):
+            asset = "fnm-arm32.zip"
+        else:
+            asset = "fnm-linux.zip"
+
+        link = self.get_download_link("Schniz/fnm", asset)
+        if not link:
+            raise RuntimeError("Could not resolve fnm download link")
+
+        # The zip holds the `fnm` binary either at its root or under a
+        # platform-named subdir, mirroring fnm's own install script.
+        self.shell.exec(
+            "Installing fnm",
+            f"""
+            set -e
+            dl=$(mktemp -d)
+            curl -fsSL -o "$dl/fnm.zip" "{link}"
+            unzip -q "$dl/fnm.zip" -d "$dl"
+            if [ -f "$dl/fnm" ]; then src="$dl/fnm"; else src="$dl"/*/fnm; fi
+            install -m 755 $src "{self.HOME}/.local/bin/fnm"
+            rm -rf "$dl"
+            """,
+        )
+
     def _sourced_exec(self, message: str, cmd: str):
-        return self.shell.exec(message, f"source {self.HOME}/.nvm/nvm.sh && {cmd}")
+        "Run cmd with the fnm-managed node on PATH (fnm lives in ~/.local/bin)."
+        return self.shell.exec(message, f'eval "$(fnm env)" && {cmd}')
 
 
 if __name__ == "__main__":
@@ -54,4 +79,3 @@ if __name__ == "__main__":
     )
 
     NodeInstaller(parser.parse_args()).run()
-

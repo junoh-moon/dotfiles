@@ -14,7 +14,6 @@ from util import GithubDownloadable
 class Vim(Script, GithubDownloadable):
     def __init__(self, args: Namespace):
         super().__init__(args)
-        self.nvm_path = f"{self.HOME}/.nvm/nvm.sh"
         self.optional_cargo_path = f"{self.HOME}/.cargo/env"  # This variable is not used on MacOS since Rust in installed via homebrew.
 
     def run(self) -> None:
@@ -140,10 +139,10 @@ class Vim(Script, GithubDownloadable):
         return super()._exists(self._sourced_cmd(cmd))
 
     def _sourced_cmd(self, cmd: str):
-        return f"source {self.optional_cargo_path}; source {self.nvm_path} && {cmd}"
+        return f'source {self.optional_cargo_path}; eval "$(fnm env)" && {cmd}'
 
     def _exec(self, message: str, cmd: str):
-        if self._exists(self.nvm_path):
+        if self.shell.run("fnm --version")[0]:
             return self.shell.exec(message, self._sourced_cmd(cmd))
         else:
             return self.shell.exec(message, cmd)

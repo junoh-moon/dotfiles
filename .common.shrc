@@ -117,4 +117,6 @@ _fzf_comprun() {
 }
 
 
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+# Node version management is handled by fnm (see ~/.shinit). fnm ships its own
+# completions via `fnm completions`, loaded by zsh's compinit through fpath if
+# desired; the old nvm bash_completion is no longer sourced.
