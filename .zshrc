@@ -19,14 +19,32 @@ export PROMPT_EOL_MARK=''
 # venv 표시는 starship의 [python] 모듈이 대신함.
 export VIRTUAL_ENV_DISABLE_PROMPT=1
 
-# Prepend user vendor completions to fpath so compinit scans them.
+# User vendor completions, loaded by compinit as fpath functions.
+#
+# Self-healing cache: each tool's `completion zsh` output is written once to
+# $zsh_completion_path/_<tool> and reused, so startup pays no subprocess cost.
+#   - Generated automatically on first run when the cache file is missing.
+#   - Regenerated when the tool binary is newer than the cache (covers brew/
+#     OrbStack upgrades, which drop a new binary with a fresh mtime).
+#   - Caveat: invalidation is mtime-based, so version-manager shims (asdf/mise),
+#     whose shim file never changes, can go stale. Force a refresh with:
+#         rm ~/.local/share/zsh/vendor-completions/_*
+# The anonymous function () keeps the loop's locals out of the global scope.
 zsh_completion_path="$HOME/.local/share/zsh/vendor-completions"
-if [ -d "$zsh_completion_path" ]; then
-	case ":$FPATH:" in
-		*":$zsh_completion_path:"*) ;;
-		*) fpath=("$zsh_completion_path" "${fpath[@]}") ;;
-	esac
-fi
+[ -d "$zsh_completion_path" ] || mkdir -p "$zsh_completion_path"
+() {
+	local tool bin
+	for tool in kubectl k9s helm; do
+		bin=$(command -v "$tool" 2>/dev/null) || continue
+		if [[ ! -f "$zsh_completion_path/_$tool" || "$bin" -nt "$zsh_completion_path/_$tool" ]]; then
+			"$tool" completion zsh > "$zsh_completion_path/_$tool" 2>/dev/null
+		fi
+	done
+}
+case ":$FPATH:" in
+	*":$zsh_completion_path:"*) ;;
+	*) fpath=("$zsh_completion_path" "${fpath[@]}") ;;
+esac
 unset zsh_completion_path
 
 autoload -Uz compinit
@@ -98,9 +116,7 @@ alias cd='pushd'
 alias back='popd'
 
 
-command -v kubectl &> /dev/null && source <(kubectl completion zsh)
-command -v k9s &> /dev/null && source <(k9s completion zsh)
-command -v helm &> /dev/null && source <(helm completion zsh)
+# kubectl/k9s/helm completions are cached as fpath functions near compinit (top of file).
 
 if command -v fzf > /dev/null 2>&1; then
 	source <(fzf --zsh)

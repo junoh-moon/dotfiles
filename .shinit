@@ -231,7 +231,18 @@ if [ -d "$HOME/.cargo/bin" ]; then
 fi
 
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
+# Lazy-load nvm: nvm.sh is 4600+ lines and costs ~250ms at startup, so defer
+# it until the first nvm/node/npm/npx call. Stubs are POSIX-compatible.
+if [ -s "$NVM_DIR/nvm.sh" ]; then
+	__load_nvm() {
+		unset -f nvm node npm npx __load_nvm
+		\. "$NVM_DIR/nvm.sh"
+	}
+	nvm()  { __load_nvm; nvm "$@"; }
+	node() { __load_nvm; node "$@"; }
+	npm()  { __load_nvm; npm "$@"; }
+	npx()  { __load_nvm; npx "$@"; }
+fi
 export KUBECONFIG="$HOME"/.kube/config
 
 command -v javac >/dev/null 2>&1 && export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which javac))))
