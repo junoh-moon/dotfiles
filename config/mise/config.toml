@@ -1,0 +1,13 @@
+# Single source of truth for the global Node version. Pinned to a CONCRETE
+# version (not "lts") on purpose: a floating alias would make mise jump to a new
+# major when one is released, silently switching Node and orphaning the
+# globally-installed npm packages. Bump deliberately by editing this version and
+# re-running the installer (which reinstalls the globals below for the new Node).
+[tools]
+node = "24.16.0"
+
+[settings]
+# Reinstall these global npm packages whenever mise installs a Node version, so a
+# version bump carries the toolset forward -- the declarative, idempotent
+# equivalent of nvm's --reinstall-packages-from.
+node.default_packages_file = "~/.config/mise/default-npm-packages"

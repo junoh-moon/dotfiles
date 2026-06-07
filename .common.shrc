@@ -117,6 +117,5 @@ _fzf_comprun() {
 }
 
 
-# Node version management is handled by fnm (see ~/.shinit). fnm ships its own
-# completions via `fnm completions`, loaded by zsh's compinit through fpath if
-# desired; the old nvm bash_completion is no longer sourced.
+# Node version management is handled by mise in shims mode (see ~/.shinit); the
+# old nvm bash_completion is no longer sourced.

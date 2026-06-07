@@ -14,58 +14,52 @@ class NodeInstaller(Script, GithubDownloadable):
         super().__init__(args)
 
     def run(self):
-        self._install_fnm()
-        self._sourced_exec(
-            "Installing nodejs lts via fnm",
-            "fnm install --lts && fnm default lts-latest",
-        )
-        self._sourced_exec(
-            "Installing yarn",
-            "npm install --global yarn",
+        self._install_mise()
+        # `mise install` reads ~/.config/mise/config.toml (linked by FileLinker):
+        # it installs the pinned Node version plus the globals listed in
+        # default-npm-packages. Idempotent -- an already-installed version is
+        # respected, not upgraded, so re-running never reshuffles Node or orphans
+        # the global npm packages.
+        self.shell.exec(
+            "Installing Node (pinned version + global packages) via mise",
+            f'"{self.HOME}/.local/bin/mise" install',
         )
 
         if self.args.typescript:
-            self._sourced_exec(
+            self._mise_exec(
                 "Installing typescript related things",
                 "npm install -g typescript ts-node pkg tslib",
             )
         return
 
-    def _install_fnm(self):
-        "Download the fnm binary (distributed as a zip) into ~/.local/bin."
+    def _install_mise(self):
+        "Download the mise binary (a tar.gz holding bin/mise) into ~/.local/bin."
         system = platform.system().lower()
         machine = platform.machine().lower()
-        if system == "darwin":
-            asset = "fnm-macos.zip"
-        elif machine in ("arm64", "aarch64"):
-            asset = "fnm-arm64.zip"
-        elif machine.startswith("arm"):
-            asset = "fnm-arm32.zip"
-        else:
-            asset = "fnm-linux.zip"
+        os_name = "macos" if system == "darwin" else "linux"
+        arch = "arm64" if machine in ("arm64", "aarch64") else "x64"
+        asset = f"-{os_name}-{arch}.tar.gz"  # leading dash avoids the -musl variant
 
-        link = self.get_download_link("Schniz/fnm", asset)
+        link = self.get_download_link("jdx/mise", asset)
         if not link:
-            raise RuntimeError("Could not resolve fnm download link")
+            raise RuntimeError("Could not resolve mise download link")
 
-        # The zip holds the `fnm` binary either at its root or under a
-        # platform-named subdir, mirroring fnm's own install script.
         self.shell.exec(
-            "Installing fnm",
+            "Installing mise",
             f"""
             set -e
             dl=$(mktemp -d)
-            curl -fsSL -o "$dl/fnm.zip" "{link}"
-            unzip -q "$dl/fnm.zip" -d "$dl"
-            if [ -f "$dl/fnm" ]; then src="$dl/fnm"; else src="$dl"/*/fnm; fi
-            install -m 755 $src "{self.HOME}/.local/bin/fnm"
+            curl -fsSL "{link}" | tar xz -C "$dl"
+            install -m 755 "$dl/mise/bin/mise" "{self.HOME}/.local/bin/mise"
             rm -rf "$dl"
             """,
         )
 
-    def _sourced_exec(self, message: str, cmd: str):
-        "Run cmd with the fnm-managed node on PATH (fnm lives in ~/.local/bin)."
-        return self.shell.exec(message, f'eval "$(fnm env)" && {cmd}')
+    def _mise_exec(self, message: str, cmd: str):
+        "Run cmd with mise's tools (the pinned Node) on PATH."
+        return self.shell.exec(
+            message, f'"{self.HOME}/.local/bin/mise" exec -- {cmd}'
+        )
 
 
 if __name__ == "__main__":

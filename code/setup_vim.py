@@ -139,10 +139,14 @@ class Vim(Script, GithubDownloadable):
         return super()._exists(self._sourced_cmd(cmd))
 
     def _sourced_cmd(self, cmd: str):
-        return f'source {self.optional_cargo_path}; eval "$(fnm env)" && {cmd}'
+        # Put mise's shims (the pinned Node/npm) and cargo on PATH for the command.
+        return (
+            f"source {self.optional_cargo_path}; "
+            f'export PATH="{self.HOME}/.local/share/mise/shims:$PATH"; {cmd}'
+        )
 
     def _exec(self, message: str, cmd: str):
-        if self.shell.run("fnm --version")[0]:
+        if self.shell.run(f"{self.HOME}/.local/bin/mise --version")[0]:
             return self.shell.exec(message, self._sourced_cmd(cmd))
         else:
             return self.shell.exec(message, cmd)
