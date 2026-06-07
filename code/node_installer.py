@@ -17,18 +17,20 @@ class NodeInstaller(Script, GithubDownloadable):
         self._install_mise()
         mise = f"{self.HOME}/.local/bin/mise"
         config = f"{self.HOME}/.config/mise/config.toml"
-        # On first install (no config yet) pin the current LTS into the config so
-        # the choice is recorded; on every later run the existing pin is left
-        # untouched, so Node is never silently upgraded. The config is per-machine
-        # runtime state (gitignored), not part of the dotfiles.
+        # Pin the current LTS only when Node isn't already pinned, so the choice
+        # is recorded once and never silently upgraded on later runs. Detection
+        # uses `mise config get tools.node` (exit 0 = pinned) rather than mere
+        # file existence, so a config that exists but lacks a Node pin is still
+        # treated as "first install". The pin is appended, preserving any other
+        # settings. The config is per-machine runtime state (gitignored).
         self.shell.exec(
-            "Pinning current Node LTS (first install only; existing pin is kept)",
+            "Pinning current Node LTS (only if not already pinned)",
             f"""
             set -e
-            if [ ! -f "{config}" ]; then
+            if ! "{mise}" config get tools.node >/dev/null 2>&1; then
                 mkdir -p "$(dirname "{config}")"
                 lts=$("{mise}" latest node@lts)
-                printf '[tools]\\nnode = "%s"\\n' "$lts" > "{config}"
+                printf '[tools]\\nnode = "%s"\\n' "$lts" >> "{config}"
             fi
             """,
         )
