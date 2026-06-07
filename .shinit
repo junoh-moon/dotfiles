@@ -233,8 +233,8 @@ fi
 # Node (and any future runtimes) via mise in shims mode. Just put mise's shims
 # dir on PATH -- each shim resolves the pinned version through the mise binary
 # (in ~/.local/bin) when invoked. No startup subprocess and no per-prompt hook,
-# so shell startup pays ~0ms (vs nvm's ~370ms / fnm's ~30ms). The global version
-# and the default global npm packages are declared in ~/.config/mise/config.toml.
+# so shell startup pays ~0ms (vs nvm's ~370ms / fnm's ~30ms). The pinned Node
+# version lives in ~/.config/mise/config.toml (per-machine, gitignored).
 MISE_SHIMS="$HOME/.local/share/mise/shims"
 case ":$PATH:" in
 *":$MISE_SHIMS:"*) ;;

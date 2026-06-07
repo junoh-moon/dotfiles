@@ -15,14 +15,26 @@ class NodeInstaller(Script, GithubDownloadable):
 
     def run(self):
         self._install_mise()
-        # `mise install` reads ~/.config/mise/config.toml (linked by FileLinker):
-        # it installs the pinned Node version plus the globals listed in
-        # default-npm-packages. Idempotent -- an already-installed version is
-        # respected, not upgraded, so re-running never reshuffles Node or orphans
-        # the global npm packages.
+        mise = f"{self.HOME}/.local/bin/mise"
+        config = f"{self.HOME}/.config/mise/config.toml"
+        # On first install (no config yet) pin the current LTS into the config so
+        # the choice is recorded; on every later run the existing pin is left
+        # untouched, so Node is never silently upgraded. The config is per-machine
+        # runtime state (gitignored), not part of the dotfiles.
         self.shell.exec(
-            "Installing Node (pinned version + global packages) via mise",
-            f'"{self.HOME}/.local/bin/mise" install',
+            "Pinning current Node LTS (first install only; existing pin is kept)",
+            f"""
+            set -e
+            if [ ! -f "{config}" ]; then
+                mkdir -p "$(dirname "{config}")"
+                lts=$("{mise}" latest node@lts)
+                printf '[tools]\\nnode = "%s"\\n' "$lts" > "{config}"
+            fi
+            """,
+        )
+        self.shell.exec(
+            "Installing the pinned Node version via mise",
+            f'"{mise}" install',
         )
 
         if self.args.typescript:
