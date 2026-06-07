@@ -53,18 +53,21 @@ esac
 unset zsh_completion_path
 
 autoload -Uz compinit
-# Rebuild the completion dump at most once per day. On every other startup,
-# `compinit -C` skips both the security audit (compaudit) and the dump
-# regeneration (compdump, ~380ms), reusing the cached ~/.zcompdump as-is.
+# Rebuild the completion dump at most once per day. Use the fast path
+# `compinit -C` (skips the compaudit security scan and the fpath rescan +
+# compdump, ~380ms) ONLY when a dump already exists and is fresh (<24h). When
+# the dump is missing (fresh machine, cleared cache) or stale (>24h), run a full
+# compinit so newly added completion functions are picked up and the dump is
+# (re)built -- `-C` would skip the rescan and silently drop new completions.
 # The glob must run in an array assignment, not inside [[ ]] (which performs no
-# filename generation): qualifier (N.mh+24) yields ~/.zcompdump only when it is
-# a plain file older than 24h, so an empty array means the dump is still fresh.
+# filename generation): qualifier (N.mh-24) yields ~/.zcompdump only when it is
+# a plain file modified within the last 24h.
 () {
-	local -a stale=("$HOME/.zcompdump"(N.mh+24))
-	if (( $#stale )); then
-		compinit
-	else
+	local -a fresh=("$HOME/.zcompdump"(N.mh-24))
+	if (( $#fresh )); then
 		compinit -C
+	else
+		compinit
 	fi
 }
 
