@@ -28,6 +28,8 @@ $pixi\
 [](fg:color_bg3 bg:color_bg1)\
 $time\
 [ ](fg:color_bg1)\
+$cmd_duration\
+$jobs\
 $line_break$character"""
 
 palette = 'gruvbox_dark'
@@ -174,8 +176,11 @@ time_format = "%R"
 style = "bg:color_bg1"
 format = '[[  $time ](fg:color_fg0 bg:color_bg1)]($style)'
 
+[jobs]
+number_threshold = 1
+
 [line_break]
-disabled = false
+disabled = true
 
 [character]
 disabled = false
