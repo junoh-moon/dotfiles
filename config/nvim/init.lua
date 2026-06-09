@@ -699,8 +699,4 @@ vim.keymap.set("x", "<leader>c", ":<C-u> lua PipeRangedSelection()<CR>")
 -------------------------------
 -- Python host
 -------------------------------
-if vim.fn.exists("$VIRTUAL_ENV") == 1 then
-  vim.g.python3_host_prog = vim.fn.substitute(vim.fn.system("which -a python3 | head -n2 | tail -n1"), "\n", "", "g")
-else
-  vim.g.python3_host_prog = vim.fn.substitute(vim.fn.system("which python3"), "\n", "", "g")
-end
+vim.g.python3_host_prog = vim.fn.expand("~/.local/share/nvim/python3-host/bin/python")

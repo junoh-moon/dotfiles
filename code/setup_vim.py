@@ -6,6 +6,7 @@ from argparse import (
     ArgumentParser,
     Namespace,
 )
+from pathlib import Path
 
 from script import Script
 from util import GithubDownloadable
@@ -121,19 +122,24 @@ class Vim(Script, GithubDownloadable):
         )
 
     def _setup_for_nvim(self):
-        HOME = self.HOME
-        proj_root = self.proj_root
-
         self._install_tree_sitter_cli()
+
+        python_host_dir = self._nvim_python_host_dir()
+        python_host_prog = python_host_dir / "bin" / "python"
 
         self.shell.exec_list(
             "Installing plugins for neovim",
-            "python3 -m pip install --upgrade 'pynvim @ git+https://github.com/neovim/pynvim'",  # At the time of writing, pynvim on pypi does not support python >= 3.12.
+            f'python3 -m venv "{python_host_dir}"',
+            f'"{python_host_prog}" -m pip install --upgrade pip',
+            f'"{python_host_prog}" -m pip install --upgrade \'pynvim @ git+https://github.com/neovim/pynvim\'',  # At the time of writing, pynvim on pypi does not support python >= 3.12.
             "nvim --headless -c PlugInstall -c quitall",
             "nvim --headless -c CocUpdateSync -c quitall",
             "nvim --headless -c TSUpdateSync -c quitall",
         )
         return
+
+    def _nvim_python_host_dir(self):
+        return self.HOME / ".local" / "share" / "nvim" / "python3-host"
 
     def _exists(self, cmd: str) -> bool:
         return super()._exists(self._sourced_cmd(cmd))
