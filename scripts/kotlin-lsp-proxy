@@ -1,0 +1,184 @@
+#!/usr/bin/env python3
+"""Stdio proxy around kotlin-lsp that fixes completion previews for coc.nvim.
+
+kotlin-lsp returns completion items whose textEdit.newText is always "" and
+defers the actual insertion to a custom command executed on confirm
+(jetbrains.kotlin.completion.apply). coc.nvim derives the pum preview word
+from textEdit.newText, so selecting an item with Tab inserts nothing — only
+confirming with Enter (which runs the command) produces text.
+See https://github.com/Kotlin/kotlin-lsp/issues/105
+
+This proxy injects `data.word = label` into such items. coc's getWord()
+prefers data.word, so Tab-selection previews the label inline. The empty
+textEdit and the command are kept untouched: on confirm, coc's
+applyTextEdit() expands the edit range by the cursor delta and replaces it
+with newText (""), wiping the preview word before the server-side command
+inserts the real completion (parentheses, auto-import). Stripping the
+textEdit instead would leave the preview word behind and duplicate text.
+
+data.word is removed from outgoing completionItem/resolve params so the
+server never sees the injected field.
+
+data.word is a coc.nvim-specific convention; other LSP clients should run
+kotlin-lsp.sh directly.
+
+Usage: same as kotlin-lsp.sh, e.g. `kotlin-lsp-proxy --stdio`
+"""
+
+import json
+import os
+import subprocess
+import sys
+import threading
+
+SERVER = os.environ.get("KOTLIN_LSP_PROXY_SERVER", "kotlin-lsp.sh")
+
+# Cheap byte-level prefilter: client messages worth parsing always contain
+# one of these method names literally.
+TRACKED_METHOD_BYTES = (b"textDocument/completion", b"completionItem/resolve")
+
+
+def read_message(stream):
+    """Read one LSP base-protocol message; return its body or None on EOF."""
+    headers = {}
+    while True:
+        line = stream.readline()
+        if not line:
+            return None
+        line = line.rstrip(b"\r\n")
+        if not line:
+            break
+        key, _, value = line.partition(b":")
+        headers[key.strip().lower()] = value.strip()
+    length = int(headers[b"content-length"])
+    body = bytearray()
+    while len(body) < length:
+        chunk = stream.read(length - len(body))
+        if not chunk:
+            return None
+        body += chunk
+    return bytes(body)
+
+
+def write_message(stream, body):
+    stream.write(b"Content-Length: %d\r\n\r\n" % len(body))
+    stream.write(body)
+    stream.flush()
+
+
+def encode(msg):
+    return json.dumps(msg, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+
+
+def inject_preview_word(item):
+    """Set data.word = label on items whose textEdit inserts nothing."""
+    text_edit = item.get("textEdit")
+    if not (isinstance(text_edit, dict) and text_edit.get("newText") == ""):
+        return False
+    label = item.get("label")
+    if not isinstance(label, str) or label == "":
+        return False
+    data = item.get("data")
+    if not isinstance(data, dict):
+        data = {}
+        item["data"] = data
+    data["word"] = label
+    return True
+
+
+def transform_server_message(body, pending, lock):
+    """Inject preview words into completion responses."""
+    # Skip parsing unless a completion response can be in flight. Reading
+    # `pending` unlocked is safe: the id is added before the request reaches
+    # the server, so it is visible by the time the response arrives.
+    if not pending or b'"result"' not in body:
+        return body
+    try:
+        msg = json.loads(body)
+    except ValueError:
+        return body
+    # Only responses to completion requests: no method, an id we recorded.
+    if not isinstance(msg, dict) or "method" in msg or "result" not in msg:
+        return body
+    msg_id = msg.get("id")
+    if not isinstance(msg_id, (str, int)):
+        return body
+    with lock:
+        if msg_id not in pending:
+            return body
+        pending.discard(msg_id)
+    result = msg["result"]
+    items = result.get("items") if isinstance(result, dict) else result
+    changed = False
+    if isinstance(items, list):
+        for item in items:
+            if isinstance(item, dict):
+                changed |= inject_preview_word(item)
+    return encode(msg) if changed else body
+
+
+def transform_client_message(body, pending, lock):
+    """Track completion requests; hide injected data.word from the server."""
+    # didChange/didOpen etc. dominate this direction; don't parse them.
+    if not any(method in body for method in TRACKED_METHOD_BYTES):
+        return body
+    try:
+        msg = json.loads(body)
+    except ValueError:
+        return body
+    if not isinstance(msg, dict):
+        return body
+    method = msg.get("method")
+    if method == "textDocument/completion" and isinstance(msg.get("id"), (str, int)):
+        with lock:
+            pending.add(msg["id"])
+    elif method == "completionItem/resolve":
+        data = msg.get("params", {}).get("data")
+        if isinstance(data, dict) and "word" in data:
+            del data["word"]
+            return encode(msg)
+    return body
+
+
+def pump_client_to_server(server_stdin, pending, lock):
+    stdin = sys.stdin.buffer
+    try:
+        while True:
+            body = read_message(stdin)
+            if body is None:
+                break
+            write_message(server_stdin, transform_client_message(body, pending, lock))
+    except (BrokenPipeError, OSError):
+        pass
+    try:
+        server_stdin.close()
+    except OSError:
+        pass
+
+
+def main():
+    proc = subprocess.Popen(
+        [SERVER] + sys.argv[1:],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+    )
+    pending = set()
+    lock = threading.Lock()
+    threading.Thread(
+        target=pump_client_to_server,
+        args=(proc.stdin, pending, lock),
+        daemon=True,
+    ).start()
+    try:
+        while True:
+            body = read_message(proc.stdout)
+            if body is None:
+                break
+            write_message(sys.stdout.buffer, transform_server_message(body, pending, lock))
+    except (BrokenPipeError, OSError):
+        pass
+    sys.exit(proc.wait())
+
+
+if __name__ == "__main__":
+    main()

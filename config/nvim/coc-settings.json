@@ -42,7 +42,7 @@
 			"args": [
 				"--stdio"
 			],
-			"command": "kotlin-lsp.sh",
+			"command": "kotlin-lsp-proxy",
 			"filetypes": [
 				"kotlin"
 			],
@@ -106,5 +106,6 @@
 	"workspace.workspaceFolderFallbackCwd": true,
 	"yaml.schemas": {
 		"kubernetes": "/*.yaml"
-	}
+	},
+	"snippets.ultisnips.pythonPrompt": false
 }
