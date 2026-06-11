@@ -47,11 +47,8 @@
 				"kotlin"
 			],
 			"rootPatterns": [
-				"build.gradle",
-				"build.gradle.kts",
-				"pom.xml",
-				"settings.gradle",
-				"settings.gradle.kts"
+				"settings.gradle.kts",
+				"pom.xml"
 			]
 		},
 		"ocaml-lsp": {
