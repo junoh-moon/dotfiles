@@ -14,6 +14,7 @@ from util import (
 )
 
 os.environ["PATH"] = f'/usr/local/bin:/opt/homebrew/bin:{os.environ["PATH"]}'
+os.environ["NONINTERACTIVE"] = "1"
 
 
 class DarwinPreparation(Script):
