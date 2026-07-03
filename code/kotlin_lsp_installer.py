@@ -4,6 +4,7 @@ import platform
 import re
 from argparse import Namespace
 from pathlib import Path
+from urllib.parse import urlparse
 
 from script import Script
 from shell import Shell
@@ -62,12 +63,16 @@ class KotlinLspInstaller(Script):
             "arm64": "arm64",
         }[arch]
 
-        pattern = (
-            rf"Download for {re.escape(platform_label)}-{re.escape(arch_label)}"
-            r"\]\((https://download-cdn\.jetbrains\.com/kotlin-lsp/[^\s)]+)\)"
+        target_label = f"{platform_label}-{arch_label}"
+        pattern = re.compile(
+            r"\[Download for (?P<label>[^\]]+)\]\((?P<url>https?://[^\s)]+)\)"
         )
-        for url in re.findall(pattern, body):
-            if url.endswith(".vsix"):
+        for match in pattern.finditer(body):
+            if match.group("label") != target_label:
+                continue
+
+            url = match.group("url")
+            if urlparse(url).path.endswith(".vsix"):
                 return url
 
         raise RuntimeError(
