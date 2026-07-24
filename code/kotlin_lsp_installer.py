@@ -3,6 +3,7 @@ import json
 import platform
 import re
 import shlex
+import uuid
 from argparse import (
     ArgumentParser,
     Namespace,
@@ -52,53 +53,39 @@ class KotlinLspInstaller(Script):
 
     def _install_artifact(self, artifact, version: str):
         archive_url, checksum_url, archive_type = artifact
+        install_dir = self.HOME / ".local" / "kotlin-lsp"
         self.shell.env.update(
             {
                 "KOTLIN_LSP_ARCHIVE_URL": archive_url,
                 "KOTLIN_LSP_CHECKSUM_URL": checksum_url,
                 "KOTLIN_LSP_ARCHIVE_TYPE": archive_type,
                 "KOTLIN_LSP_VERSION": version,
-                "KOTLIN_LSP_INSTALL_DIR": str(self.HOME / ".local" / "kotlin-lsp"),
+                "KOTLIN_LSP_INSTALL_DIR": str(install_dir),
                 "KOTLIN_LSP_BIN_DIR": str(self.HOME / ".local" / "bin"),
+                "KOTLIN_LSP_STAGE_DIR": str(
+                    install_dir / f".staging-{version}-{uuid.uuid4().hex}"
+                ),
             }
         )
-        ok, out, err = self.shell.exec(
-            f"Installing kotlin lsp (v{version})",
+        installed = self.shell.exec_list(
+            f"Installing kotlin lsp v{version} "
+            "[download/checksum/prepare/activate/cleanup]",
             r"""
             set -euo pipefail
-
-            install_dir=$KOTLIN_LSP_INSTALL_DIR
-            bin_dir=$KOTLIN_LSP_BIN_DIR
-            version=$KOTLIN_LSP_VERSION
-            target="$install_dir/kotlin-server-$version"
-            current="$bin_dir/kotlin-lsp.sh"
-            mkdir -p -- "$install_dir" "$bin_dir"
-
-            stage=$(mktemp -d "$install_dir/.staging-$version-XXXXXX")
-            backup="$stage/previous-server"
-            temporary_link="$bin_dir/.kotlin-lsp.sh.$$"
-            published=
-            backed_up=
-            committed=
-            cleanup() {
-                status=$?
-                trap - EXIT INT TERM
-                rm -f -- "$temporary_link"
-                if [ -z "$committed" ]; then
-                    [ -z "$published" ] || rm -rf -- "$target"
-                    [ -z "$backed_up" ] || mv -- "$backup" "$target"
-                fi
-                rm -rf -- "$stage"
-                exit "$status"
-            }
-            trap cleanup EXIT INT TERM
-
+            stage=$KOTLIN_LSP_STAGE_DIR
             archive="$stage/archive"
             checksum="$stage/archive.sha256"
-            extracted="$stage/extracted"
+            mkdir -p -- "$stage" "$KOTLIN_LSP_BIN_DIR"
             curl -fLsS --retry 3 -o "$archive" "$KOTLIN_LSP_ARCHIVE_URL"
             curl -fLsS --retry 3 -o "$checksum" "$KOTLIN_LSP_CHECKSUM_URL"
-
+            touch "$stage/downloaded"
+            """,
+            r"""
+            set -euo pipefail
+            stage=$KOTLIN_LSP_STAGE_DIR
+            [ -f "$stage/downloaded" ]
+            archive="$stage/archive"
+            checksum="$stage/archive.sha256"
             expected=$(awk 'NR == 1 { print tolower($1) }' "$checksum")
             printf '%s\n' "$expected" | grep -Eq '^[0-9a-f]{64}$' || {
                 echo "Kotlin LSP checksum file is invalid" >&2
@@ -116,7 +103,14 @@ class KotlinLspInstaller(Script):
                 echo "Kotlin LSP archive checksum mismatch" >&2
                 exit 1
             }
-
+            touch "$stage/checksum-verified"
+            """,
+            r"""
+            set -euo pipefail
+            stage=$KOTLIN_LSP_STAGE_DIR
+            [ -f "$stage/checksum-verified" ]
+            archive="$stage/archive"
+            extracted="$stage/extracted"
             mkdir -- "$extracted"
             case "$KOTLIN_LSP_ARCHIVE_TYPE" in
                 tar.gz) tar -xzf "$archive" -C "$extracted" ;;
@@ -132,42 +126,77 @@ class KotlinLspInstaller(Script):
             }
             launcher=$(sed -n '1p' "$stage/launchers")
             chmod +x "$launcher"
-            "$launcher" --version | grep -Fq "LS-$version" || {
+            "$launcher" --version | grep -Fq "LS-$KOTLIN_LSP_VERSION" || {
                 echo "Kotlin LSP launcher version verification failed" >&2
                 exit 1
             }
-
+            mv -- "$(dirname "$(dirname "$launcher")")" "$stage/server"
+            touch "$stage/prepared"
+            """,
+            r"""
+            set -euo pipefail
+            stage=$KOTLIN_LSP_STAGE_DIR
+            [ -f "$stage/prepared" ]
+            install_dir=$KOTLIN_LSP_INSTALL_DIR
+            bin_dir=$KOTLIN_LSP_BIN_DIR
+            target="$install_dir/kotlin-server-$KOTLIN_LSP_VERSION"
+            current="$bin_dir/kotlin-lsp.sh"
+            backup="$stage/previous-server"
+            temporary_link="$bin_dir/.kotlin-lsp.sh.$$"
+            published=
+            backed_up=
+            committed=
+            rollback() {
+                status=$?
+                trap - EXIT INT TERM
+                rm -f -- "$temporary_link"
+                if [ -z "$committed" ]; then
+                    [ -z "$published" ] || rm -rf -- "$target"
+                    [ -z "$backed_up" ] || mv -- "$backup" "$target"
+                fi
+                exit "$status"
+            }
+            trap rollback EXIT INT TERM
             previous=
             if [ -L "$current" ]; then
                 previous=$(readlink "$current")
                 previous=${previous%/bin/intellij-server}
             fi
+            printf '%s\n' "$previous" > "$stage/previous-server-path"
             if [ -e "$target" ] || [ -L "$target" ]; then
                 mv -- "$target" "$backup"
                 backed_up=1
             fi
-            mv -- "$(dirname "$(dirname "$launcher")")" "$target"
+            mv -- "$stage/server" "$target"
             published=1
             ln -s "$target/bin/intellij-server" "$temporary_link"
             mv -f -- "$temporary_link" "$current"
             committed=1
-
-            case "$previous" in
-                "$install_dir"/kotlin-server-*) ;;
-                *) previous= ;;
-            esac
-            for directory in "$install_dir"/kotlin-server-*; do
-                [ -d "$directory" ] || continue
-                [ "$directory" = "$target" ] && continue
-                [ "$directory" = "$previous" ] && continue
-                rm -rf -- "$directory"
-            done
+            touch "$stage/committed"
+            """,
+            r"""
+            set -euo pipefail
+            stage=$KOTLIN_LSP_STAGE_DIR
+            if [ -f "$stage/committed" ]; then
+                install_dir=$KOTLIN_LSP_INSTALL_DIR
+                target="$install_dir/kotlin-server-$KOTLIN_LSP_VERSION"
+                previous=$(sed -n '1p' "$stage/previous-server-path")
+                case "$previous" in
+                    "$install_dir"/kotlin-server-*) ;;
+                    *) previous= ;;
+                esac
+                for directory in "$install_dir"/kotlin-server-*; do
+                    [ -d "$directory" ] || continue
+                    [ "$directory" = "$target" ] && continue
+                    [ "$directory" = "$previous" ] && continue
+                    rm -rf -- "$directory"
+                done
+            fi
+            rm -rf -- "$stage"
             """,
         )
-        if not ok:
-            raise RuntimeError(
-                f"Failed to install Kotlin LSP: {err or out or 'unknown error'}"
-            )
+        if not installed:
+            raise RuntimeError("Failed to install Kotlin LSP")
 
     def run(self):
         system = platform.system().lower()
