@@ -1,281 +1,214 @@
 #!/usr/bin/env python3
-import hashlib
 import json
-import os
 import platform
 import re
 import shlex
-import shutil
-import tempfile
-import uuid
-from argparse import Namespace
-from dataclasses import dataclass
-from pathlib import Path
+from argparse import (
+    ArgumentParser,
+    Namespace,
+)
 from urllib.parse import urlparse
 
 from script import Script
-from shell import Shell
-
-
-@dataclass(frozen=True)
-class ReleaseArtifact:
-    url: str
-    checksum_url: str
-    archive_type: str
 
 
 class KotlinLspInstaller(Script):
-    def __init__(self, args: Namespace):
-        super().__init__(args)
-        self.HOME = Path.home()
-        self.shell = Shell()
-
-    def _get_platform_info(self):
-        """Detect current platform and architecture for release matching."""
-        system = platform.system().lower()
-        machine = platform.machine().lower()
-
-        # Map system names
-        if system == "darwin":
-            os_name = "macos"
-        elif system == "linux":
-            os_name = "linux"
-        elif system == "windows":
-            os_name = "windows"
-        else:
-            raise RuntimeError(f"Unsupported operating system: {system}")
-
-        # Map architecture names
-        if machine in ("x86_64", "amd64"):
-            arch = "x64"
-        elif machine in ("arm64", "aarch64"):
-            arch = "arm64"
-        else:
-            raise RuntimeError(f"Unsupported architecture: {machine}")
-
-        return os_name, arch
-
-    def _get_latest_release(self):
-        cmd = (
-            "curl -fsSL https://api.github.com/repos/Kotlin/kotlin-lsp/releases/latest"
-        )
-        ok, out, err = self.shell.run(cmd)
-        if not ok:
-            raise RuntimeError(f"Failed to fetch latest kotlin-lsp release: {err}")
-
-        return json.loads(out)
-
-    def _get_version_from_tag(self, tag_name: str):
-        return tag_name.rsplit("/", 1)[-1].removeprefix("v")
-
-    def _get_artifact_from_release_body(
-        self,
-        body: str,
-        os_name: str,
-        arch: str,
-    ) -> ReleaseArtifact:
+    def _get_artifact(self, body: str, os_name: str, arch: str):
         platform_label = {
             "linux": "Linux",
             "macos": "macOS",
             "windows": "Windows",
         }[os_name]
-        arch_label = {
-            "x64": "x64",
-            "arm64": "arm64",
-        }[arch]
-        target_label = f"Download for {platform_label}-{arch_label}".casefold()
+        arch_label = {"x64": "x64", "arm64": "arm64"}[arch]
+        target = f"Download for {platform_label}-{arch_label}".casefold()
         links = re.findall(
             r"\[(?P<label>[^\]]+)\]\((?P<url>https?://[^\s)]+)\)",
             body,
         )
         candidates = []
-        for index, (label, url) in enumerate(links):
-            if " ".join(label.split()).casefold() != target_label:
-                continue
 
-            if index + 1 >= len(links):
+        for (label, url), (checksum_label, checksum_url) in zip(links, links[1:]):
+            if " ".join(label.split()).casefold() != target:
                 continue
-            checksum_label, checksum_url = links[index + 1]
-            normalized_checksum_label = re.sub(
-                r"[^a-z0-9]",
-                "",
-                checksum_label.casefold(),
-            )
-            if (
-                "sha256" not in normalized_checksum_label
-                or "checksum" not in normalized_checksum_label
-            ):
+            checksum_label = re.sub(r"[^a-z0-9]", "", checksum_label.casefold())
+            if "sha256" not in checksum_label or "checksum" not in checksum_label:
                 continue
 
             path = urlparse(url).path.casefold()
             if path.endswith(".tar.gz"):
-                candidates.append((0, ReleaseArtifact(url, checksum_url, "tar.gz")))
+                candidates.append((0, url, checksum_url, "tar.gz"))
             elif path.endswith((".zip", ".sit")):
-                candidates.append((0, ReleaseArtifact(url, checksum_url, "zip")))
+                candidates.append((0, url, checksum_url, "zip"))
             elif path.endswith(".vsix"):
-                candidates.append((1, ReleaseArtifact(url, checksum_url, "zip")))
+                candidates.append((1, url, checksum_url, "zip"))
 
-        if candidates:
-            return min(candidates, key=lambda candidate: candidate[0])[1]
+        if not candidates:
+            raise RuntimeError(
+                f"Could not find a Kotlin LSP download URL for "
+                f"{platform_label}-{arch_label}"
+            )
+        _, url, checksum_url, archive_type = min(candidates)
+        return url, checksum_url, archive_type
 
-        raise RuntimeError(
-            f"Could not find a Kotlin LSP download URL for "
-            f"{platform_label}-{arch_label}"
+    def _install_artifact(self, artifact, version: str):
+        archive_url, checksum_url, archive_type = artifact
+        self.shell.env.update(
+            {
+                "KOTLIN_LSP_ARCHIVE_URL": archive_url,
+                "KOTLIN_LSP_CHECKSUM_URL": checksum_url,
+                "KOTLIN_LSP_ARCHIVE_TYPE": archive_type,
+                "KOTLIN_LSP_VERSION": version,
+                "KOTLIN_LSP_INSTALL_DIR": str(self.HOME / ".local" / "kotlin-lsp"),
+                "KOTLIN_LSP_BIN_DIR": str(self.HOME / ".local" / "bin"),
+            }
         )
+        ok, out, err = self.shell.exec(
+            f"Installing kotlin lsp (v{version})",
+            r"""
+            set -euo pipefail
 
-    def _install_artifact(self, artifact: ReleaseArtifact, version: str):
-        install_dir = self.HOME / ".local" / "kotlin-lsp"
-        install_dir.mkdir(parents=True, exist_ok=True)
+            install_dir=$KOTLIN_LSP_INSTALL_DIR
+            bin_dir=$KOTLIN_LSP_BIN_DIR
+            version=$KOTLIN_LSP_VERSION
+            target="$install_dir/kotlin-server-$version"
+            current="$bin_dir/kotlin-lsp.sh"
+            mkdir -p -- "$install_dir" "$bin_dir"
 
-        with tempfile.TemporaryDirectory(
-            prefix=f".staging-{version}-",
-            dir=install_dir,
-        ) as temporary_dir:
-            staging_dir = Path(temporary_dir)
-            archive_path = staging_dir / "kotlin-lsp-archive"
-            checksum_path = staging_dir / "kotlin-lsp-archive.sha256"
-            for url, destination in (
-                (artifact.url, archive_path),
-                (artifact.checksum_url, checksum_path),
-            ):
-                command = (
-                    "curl --fail --location --silent --show-error "
-                    f"--retry 3 --output {shlex.quote(str(destination))} "
-                    f"{shlex.quote(url)}"
-                )
-                ok, _, err = self.shell.run(command)
-                if not ok:
-                    raise RuntimeError(f"Failed to download {url}: {err}")
+            stage=$(mktemp -d "$install_dir/.staging-$version-XXXXXX")
+            backup="$stage/previous-server"
+            temporary_link="$bin_dir/.kotlin-lsp.sh.$$"
+            published=
+            backed_up=
+            committed=
+            cleanup() {
+                status=$?
+                trap - EXIT INT TERM
+                rm -f -- "$temporary_link"
+                if [ -z "$committed" ]; then
+                    [ -z "$published" ] || rm -rf -- "$target"
+                    [ -z "$backed_up" ] || mv -- "$backup" "$target"
+                fi
+                rm -rf -- "$stage"
+                exit "$status"
+            }
+            trap cleanup EXIT INT TERM
 
-            checksum_match = re.match(
-                r"(?P<checksum>[0-9a-fA-F]{64})\b",
-                checksum_path.read_text().strip(),
+            archive="$stage/archive"
+            checksum="$stage/archive.sha256"
+            extracted="$stage/extracted"
+            curl -fLsS --retry 3 -o "$archive" "$KOTLIN_LSP_ARCHIVE_URL"
+            curl -fLsS --retry 3 -o "$checksum" "$KOTLIN_LSP_CHECKSUM_URL"
+
+            expected=$(awk 'NR == 1 { print tolower($1) }' "$checksum")
+            printf '%s\n' "$expected" | grep -Eq '^[0-9a-f]{64}$' || {
+                echo "Kotlin LSP checksum file is invalid" >&2
+                exit 1
+            }
+            if command -v sha256sum >/dev/null 2>&1; then
+                actual=$(sha256sum "$archive" | awk '{ print $1 }')
+            elif command -v shasum >/dev/null 2>&1; then
+                actual=$(shasum -a 256 "$archive" | awk '{ print $1 }')
+            else
+                echo "sha256sum or shasum is required" >&2
+                exit 1
+            fi
+            [ "$actual" = "$expected" ] || {
+                echo "Kotlin LSP archive checksum mismatch" >&2
+                exit 1
+            }
+
+            mkdir -- "$extracted"
+            case "$KOTLIN_LSP_ARCHIVE_TYPE" in
+                tar.gz) tar -xzf "$archive" -C "$extracted" ;;
+                zip) unzip -q "$archive" -d "$extracted" ;;
+                *) echo "Unsupported Kotlin LSP archive type" >&2; exit 1 ;;
+            esac
+
+            find "$extracted" -type f -path '*/bin/intellij-server' \
+                -print > "$stage/launchers"
+            [ "$(wc -l < "$stage/launchers" | tr -d '[:space:]')" = 1 ] || {
+                echo "Kotlin LSP archive must contain exactly one launcher" >&2
+                exit 1
+            }
+            launcher=$(sed -n '1p' "$stage/launchers")
+            chmod +x "$launcher"
+            "$launcher" --version | grep -Fq "LS-$version" || {
+                echo "Kotlin LSP launcher version verification failed" >&2
+                exit 1
+            }
+
+            previous=
+            if [ -L "$current" ]; then
+                previous=$(readlink "$current")
+                previous=${previous%/bin/intellij-server}
+            fi
+            if [ -e "$target" ] || [ -L "$target" ]; then
+                mv -- "$target" "$backup"
+                backed_up=1
+            fi
+            mv -- "$(dirname "$(dirname "$launcher")")" "$target"
+            published=1
+            ln -s "$target/bin/intellij-server" "$temporary_link"
+            mv -f -- "$temporary_link" "$current"
+            committed=1
+
+            case "$previous" in
+                "$install_dir"/kotlin-server-*) ;;
+                *) previous= ;;
+            esac
+            for directory in "$install_dir"/kotlin-server-*; do
+                [ -d "$directory" ] || continue
+                [ "$directory" = "$target" ] && continue
+                [ "$directory" = "$previous" ] && continue
+                rm -rf -- "$directory"
+            done
+            """,
+        )
+        if not ok:
+            raise RuntimeError(
+                f"Failed to install Kotlin LSP: {err or out or 'unknown error'}"
             )
-            if checksum_match is None:
-                raise RuntimeError("Kotlin LSP checksum file is invalid")
-
-            digest = hashlib.sha256()
-            with archive_path.open("rb") as archive:
-                for chunk in iter(lambda: archive.read(1024 * 1024), b""):
-                    digest.update(chunk)
-            if digest.hexdigest() != checksum_match.group("checksum").casefold():
-                raise RuntimeError("Kotlin LSP archive checksum mismatch")
-
-            extracted_dir = staging_dir / "extracted"
-            extracted_dir.mkdir()
-            if artifact.archive_type == "tar.gz":
-                extract_command = (
-                    f"tar -xzf {shlex.quote(str(archive_path))} "
-                    f"-C {shlex.quote(str(extracted_dir))}"
-                )
-            elif artifact.archive_type == "zip":
-                extract_command = (
-                    f"unzip -q {shlex.quote(str(archive_path))} "
-                    f"-d {shlex.quote(str(extracted_dir))}"
-                )
-            else:
-                raise RuntimeError(
-                    f"Unsupported Kotlin LSP archive type: {artifact.archive_type}"
-                )
-
-            ok, _, err = self.shell.run(extract_command)
-            if not ok:
-                raise RuntimeError(f"Failed to extract Kotlin LSP archive: {err}")
-
-            launcher_candidates = list(extracted_dir.glob("**/bin/intellij-server"))
-            if len(launcher_candidates) != 1:
-                raise RuntimeError(
-                    "Kotlin LSP archive must contain exactly one "
-                    "bin/intellij-server launcher"
-                )
-
-            staged_launcher = launcher_candidates[0]
-            staged_launcher.chmod(staged_launcher.stat().st_mode | 0o111)
-            ok, output, err = self._launcher_version(staged_launcher)
-            if not ok or f"LS-{version}" not in output:
-                details = err or output or "no version output"
-                raise RuntimeError(
-                    f"Kotlin LSP launcher verification failed: {details}"
-                )
-
-            staged_server = staged_launcher.parent.parent
-            launcher_relative_path = staged_launcher.relative_to(staged_server)
-            server_dir = install_dir / f"kotlin-server-{version}"
-            bin_dir = self.HOME / ".local" / "bin"
-            bin_dir.mkdir(parents=True, exist_ok=True)
-            current_link = bin_dir / "kotlin-lsp.sh"
-            previous_server = self._get_installed_server(current_link, install_dir)
-            backup_dir = install_dir / (f".backup-{version}-{uuid.uuid4().hex}")
-            temporary_link = bin_dir / (f".kotlin-lsp.sh.{uuid.uuid4().hex}")
-            had_existing_target = server_dir.exists()
-
-            try:
-                if had_existing_target:
-                    server_dir.replace(backup_dir)
-                staged_server.replace(server_dir)
-                installed_launcher = server_dir / launcher_relative_path
-                temporary_link.symlink_to(installed_launcher)
-                os.replace(temporary_link, current_link)
-            except Exception:
-                temporary_link.unlink(missing_ok=True)
-                if server_dir.exists():
-                    shutil.rmtree(server_dir)
-                if backup_dir.exists():
-                    backup_dir.replace(server_dir)
-                raise
-            else:
-                if backup_dir.exists():
-                    shutil.rmtree(backup_dir)
-
-            self._remove_obsolete_servers(
-                install_dir,
-                keep={server_dir, previous_server, staging_dir},
-            )
-            return installed_launcher
-
-    def _get_installed_server(self, launcher: Path, install_dir: Path):
-        if not launcher.exists():
-            return None
-
-        resolved_launcher = launcher.resolve()
-        for parent in resolved_launcher.parents:
-            if parent.parent == install_dir and parent.name.startswith(
-                "kotlin-server-"
-            ):
-                return parent
-        return None
-
-    def _remove_obsolete_servers(self, install_dir: Path, keep):
-        kept_servers = {path for path in keep if path is not None}
-        for pattern in ("kotlin-server-*", ".staging-*", ".backup-*"):
-            for directory in install_dir.glob(pattern):
-                if directory not in kept_servers and directory.is_dir():
-                    shutil.rmtree(directory)
-
-    def _launcher_version(self, launcher: Path):
-        if not launcher.is_file():
-            return False, "", "launcher does not exist"
-        return self.shell.run(f"{shlex.quote(str(launcher))} --version")
 
     def run(self):
-        release = self._get_latest_release()
-        version = self._get_version_from_tag(release["tag_name"])
-        current_launcher = self.HOME / ".local" / "bin" / "kotlin-lsp.sh"
-        current_ok, current_version, _ = self._launcher_version(current_launcher)
-        if current_ok and f"LS-{version}" in current_version:
-            print(f"Kotlin LSP v{version} is already installed")
-            return
+        system = platform.system().lower()
+        machine = platform.machine().lower()
+        os_name = {
+            "darwin": "macos",
+            "linux": "linux",
+            "windows": "windows",
+        }.get(system)
+        arch = {
+            "x86_64": "x64",
+            "amd64": "x64",
+            "arm64": "arm64",
+            "aarch64": "arm64",
+        }.get(machine)
+        if os_name is None:
+            raise RuntimeError(f"Unsupported operating system: {system}")
+        if arch is None:
+            raise RuntimeError(f"Unsupported architecture: {machine}")
 
-        os_name, arch = self._get_platform_info()
-        artifact = self._get_artifact_from_release_body(
-            release.get("body", ""),
-            os_name,
-            arch,
+        ok, out, err = self.shell.run(
+            "curl -fsSL "
+            "https://api.github.com/repos/Kotlin/kotlin-lsp/releases/latest"
         )
+        if not ok:
+            raise RuntimeError(f"Failed to fetch latest Kotlin LSP release: {err}")
+
+        release = json.loads(out)
+        version = release["tag_name"].rsplit("/", 1)[-1].removeprefix("v")
+        current = self.HOME / ".local" / "bin" / "kotlin-lsp.sh"
+        if current.is_file():
+            current_ok, current_version, _ = self.shell.run(
+                f"{shlex.quote(str(current))} --version"
+            )
+            if current_ok and f"LS-{version}" in current_version:
+                print(f"Kotlin LSP v{version} is already installed")
+                return
+
+        artifact = self._get_artifact(release.get("body", ""), os_name, arch)
         self._install_artifact(artifact, version)
 
 
 if __name__ == "__main__":
-    from argparse import ArgumentParser
-
     KotlinLspInstaller(ArgumentParser().parse_args()).run()
