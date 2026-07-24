@@ -51,6 +51,38 @@ class KotlinLspInstallerTest(unittest.TestCase):
             "https://download-cdn.jetbrains.com/language-server/kotlin-server/262.8190.0/kotlin-server-0.0.5-linux-amd64.vsix",
         )
 
+    def test_get_artifact_prefers_standalone_across_release_formats(self):
+        release_bodies = (
+            (
+                """
+* [Download for Linux-x64](https://download-cdn.jetbrains.com/kotlin-lsp/262.2310.0/kotlin-lsp-262.2310.0-linux-x64.vsix)
+* [Download for Linux-x64](https://download-cdn.jetbrains.com/kotlin-lsp/262.2310.0/kotlin-lsp-262.2310.0-linux-x64.zip) | [SHA-256 checksum](https://download-cdn.jetbrains.com/kotlin-lsp/262.2310.0/kotlin-lsp-262.2310.0-linux-x64.zip.sha256)
+""",
+                "https://download-cdn.jetbrains.com/kotlin-lsp/262.2310.0/kotlin-lsp-262.2310.0-linux-x64.zip",
+                "zip",
+            ),
+            (
+                """
+* [Download for Linux-x64](https://download-cdn.jetbrains.com/language-server/kotlin-server/262.8190.0/kotlin-server-0.0.5-linux-amd64.vsix)
+* [Download for Linux-x64](https://download-cdn.jetbrains.com/language-server/kotlin-server/262.8190.0/kotlin-server-262.8190.0.tar.gz) | [SHA-256 checksum](https://download-cdn.jetbrains.com/language-server/kotlin-server/262.8190.0/kotlin-server-262.8190.0.tar.gz.sha256)
+""",
+                "https://download-cdn.jetbrains.com/language-server/kotlin-server/262.8190.0/kotlin-server-262.8190.0.tar.gz",
+                "tar.gz",
+            ),
+        )
+
+        for body, expected_url, expected_archive_type in release_bodies:
+            with self.subTest(expected_url=expected_url):
+                artifact = self.installer._get_artifact_from_release_body(
+                    body,
+                    "linux",
+                    "x64",
+                )
+
+                self.assertEqual(artifact.url, expected_url)
+                self.assertEqual(artifact.checksum_url, f"{expected_url}.sha256")
+                self.assertEqual(artifact.archive_type, expected_archive_type)
+
 
 if __name__ == "__main__":
     unittest.main()

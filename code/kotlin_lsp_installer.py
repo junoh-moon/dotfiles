@@ -3,11 +3,19 @@ import json
 import platform
 import re
 from argparse import Namespace
+from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlparse
 
 from script import Script
 from shell import Shell
+
+
+@dataclass(frozen=True)
+class ReleaseArtifact:
+    url: str
+    checksum_url: str
+    archive_type: str
 
 
 class KotlinLspInstaller(Script):
@@ -51,6 +59,47 @@ class KotlinLspInstaller(Script):
 
     def _get_version_from_tag(self, tag_name: str):
         return tag_name.rsplit("/", 1)[-1].removeprefix("v")
+
+    def _get_artifact_from_release_body(
+        self,
+        body: str,
+        os_name: str,
+        arch: str,
+    ):
+        platform_label = {
+            "linux": "Linux",
+            "macos": "macOS",
+            "windows": "Windows",
+        }[os_name]
+        arch_label = {
+            "x64": "x64",
+            "arm64": "arm64",
+        }[arch]
+        target_label = f"Download for {platform_label}-{arch_label}".casefold()
+        links = re.findall(
+            r"\[(?P<label>[^\]]+)\]\((?P<url>https?://[^\s)]+)\)",
+            body,
+        )
+        candidates = []
+        for label, url in links:
+            if " ".join(label.split()).casefold() != target_label:
+                continue
+
+            path = urlparse(url).path.casefold()
+            if path.endswith(".tar.gz"):
+                candidates.append((0, ReleaseArtifact(url, f"{url}.sha256", "tar.gz")))
+            elif path.endswith((".zip", ".sit")):
+                candidates.append((0, ReleaseArtifact(url, f"{url}.sha256", "zip")))
+            elif path.endswith(".vsix"):
+                candidates.append((1, ReleaseArtifact(url, f"{url}.sha256", "zip")))
+
+        if candidates:
+            return min(candidates, key=lambda candidate: candidate[0])[1]
+
+        raise RuntimeError(
+            f"Could not find a Kotlin LSP download URL for "
+            f"{platform_label}-{arch_label}"
+        )
 
     def _get_vsix_url_from_release_body(self, body: str, os_name: str, arch: str):
         platform_label = {
