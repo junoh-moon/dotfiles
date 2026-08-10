@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 import json
 import os
+import platform
 import re
 from argparse import ArgumentParser
 
 from script import Script
+from util import is_m1
 
 
 class FileLinker(Script):
@@ -18,16 +20,22 @@ class FileLinker(Script):
             f'ln -fs "{proj_root}"/scripts/* {HOME}/.local/bin/',
         )
 
+        # 중복 키는 마지막 값이 이기므로, 뒤로 갈수록 우선순위가 높다.
+        tool_dir = {
+            True: "/usr/bin",
+            platform.system() == "Darwin": "/usr/local/bin",
+            platform.system() == "Darwin" and is_m1(): "/opt/homebrew/bin",
+        }[True]
         self.shell.exec_list(
             "Enabling tar to parallelize archiving files",
-            f"ln -sf /usr/bin/lbzip2 {HOME}/.local/bin/bzip2",
-            f"ln -sf /usr/bin/lbzip2 {HOME}/.local/bin/bunzip2",
-            f"ln -sf /usr/bin/lbzip2 {HOME}/.local/bin/bzcat",
-            f"ln -sf /usr/bin/pigz {HOME}/.local/bin/gzip",
-            f"ln -sf /usr/bin/pigz {HOME}/.local/bin/gunzip",
-            f"ln -sf /usr/bin/pigz {HOME}/.local/bin/gzcat",
-            f"ln -sf /usr/bin/pigz {HOME}/.local/bin/zcat",
-            f"ln -sf /usr/bin/pixz {HOME}/.local/bin/xz",
+            f"ln -sf {tool_dir}/lbzip2 {HOME}/.local/bin/bzip2",
+            f"ln -sf {tool_dir}/lbzip2 {HOME}/.local/bin/bunzip2",
+            f"ln -sf {tool_dir}/lbzip2 {HOME}/.local/bin/bzcat",
+            f"ln -sf {tool_dir}/pigz {HOME}/.local/bin/gzip",
+            f"ln -sf {tool_dir}/pigz {HOME}/.local/bin/gunzip",
+            f"ln -sf {tool_dir}/pigz {HOME}/.local/bin/gzcat",
+            f"ln -sf {tool_dir}/pigz {HOME}/.local/bin/zcat",
+            f"ln -sf {tool_dir}/pixz {HOME}/.local/bin/xz",
         )
 
         trueline_path = f"{HOME}/.trueline.sh"
