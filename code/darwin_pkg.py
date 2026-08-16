@@ -1,3 +1,4 @@
+import json
 import os
 from argparse import Namespace
 from functools import cached_property
@@ -16,13 +17,31 @@ from util import (
 os.environ["PATH"] = f'/usr/local/bin:/opt/homebrew/bin:{os.environ["PATH"]}'
 os.environ["NONINTERACTIVE"] = "1"
 
+# Packages from third-party taps, as (brew trust option, fully qualified name).
+# Homebrew refuses to load them until the tap or the package itself is trusted,
+# so DarwinPreparation taps and trusts these before any installation happens.
+TAP_PACKAGES = (
+    ("formula", "kiki-ki/tap/qo"),
+    ("cask", "postmelee/tap/alhangeul"),
+)
+
+
+def tap_of(full_name: str) -> str:
+    "Extracts the `user/repo` part of a fully qualified package name"
+    return "/".join(full_name.split("/", 2)[:2])
+
+
+def tap_packages(kind: str) -> list[str]:
+    "Lists fully qualified names of the tap packages of the given kind"
+    return [name for tap_kind, name in TAP_PACKAGES if tap_kind == kind]
+
 
 class DarwinPreparation(Script):
     def __init__(self, args: Namespace):
         super().__init__(args)
 
     def run(self):
-        "Installs homebrew if not exists"
+        "Installs homebrew if not exists, then prepares third-party taps"
 
         if not self._exists("brew"):
             self.shell.exec_list(
@@ -30,7 +49,47 @@ class DarwinPreparation(Script):
                 "sudo echo hello",  # To acquire sudo permission
                 '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" < /dev/null',
             )
+        self._add_taps()
+        self._trust_taps()
         return
+
+    def _add_taps(self):
+        for tap in sorted({tap_of(name) for _, name in TAP_PACKAGES}):
+            if tap in self._tapped:
+                print(f"Skipping tap {tap} - already tapped")
+                continue
+            self.shell.exec(f"Tapping {tap}", f"brew tap {tap}")
+        return
+
+    def _trust_taps(self):
+        """
+        Homebrew ignores packages from untrusted taps, which makes both the
+        installation and the `brew list` based idempotency check fail.
+        """
+        for kind, name in TAP_PACKAGES:
+            if name in self._trusted or tap_of(name) in self._trusted:
+                print(f"Skipping trust {name} - already trusted")
+                continue
+            self.shell.exec(f"Trusting {name}", f"brew trust --{kind} {name}")
+        return
+
+    @cached_property
+    def _tapped(self) -> set[str]:
+        ok, out, _ = self.shell.run("brew tap")
+        if not ok:
+            print("Failed to list homebrew taps")
+            return set()
+        return set(out.split())
+
+    @cached_property
+    def _trusted(self) -> set[str]:
+        # Trusting a whole tap covers every package in it, so the tap names
+        # matter as much as the individual entries.
+        ok, out, _ = self.shell.run("brew trust --json v1")
+        if not ok:
+            print("Failed to list trusted homebrew packages")
+            return set()
+        return {name for names in json.loads(out).values() for name in names}
 
 
 class DarwinPackageManager(PackageManager):
@@ -38,7 +97,7 @@ class DarwinPackageManager(PackageManager):
     def cmd(self) -> str:
         return "brew install "
 
-    @property
+    @cached_property
     def pkgs(self):
         pkgs = [
             "bash",
@@ -116,13 +175,11 @@ class DarwinPackageManager(PackageManager):
             pkgs.append("boost")
         if self.shell.env.get("DISPLAY", False):
             print("X11 is not supported")
-        if self.args.misc:
-            print("Misc is not supported")
         if self.args.golang:
             pkgs.append("go")
         if self.args.elixir:
             pkgs += ["erlang", "elixir"]
-        return pkgs
+        return pkgs + tap_packages("formula")
 
     def do_misc(self):
         """
@@ -168,8 +225,9 @@ class Mac(Script, GithubDownloadable):
 
         self.shell.exec_list(
             "Installing 7zip",
-            self.dl_cmd(
-                "https://7-zip.org/a/7z2409-mac.tar.xz",
+            self.github_dl_cmd(
+                "ip7z/7zip",
+                "mac.tar.xz",
                 tar_extract_flags="xJ",
             ),
             f"rm -rf {self.HOME}/.local/bin/MANUAL {self.HOME}/.local/bin/readme.txt  {self.HOME}/.local/bin/History.txt {self.HOME}/.local/bin/License.txt {self.HOME}/.local/bin/7zzs",
@@ -178,7 +236,10 @@ class Mac(Script, GithubDownloadable):
 
         self.shell.exec(
             "Installing fzf",
-            self.github_dl_cmd("junegunn/fzf", "darwin_arm64.tar.gz"),
+            self.github_dl_cmd(
+                "junegunn/fzf",
+                "darwin_arm64.tar.gz" if is_m1() else "darwin_amd64.tar.gz",
+            ),
         )
 
         KotlinLspInstaller(self.args).run()
@@ -239,7 +300,6 @@ class Mac(Script, GithubDownloadable):
             "calibre",
             "cursor",
             "cyberduck",  # sftp/nextcloud client
-            "docker",
             "easyfind",  # everything alternative
             "firefox",
             "font-d2coding",
@@ -254,18 +314,21 @@ class Mac(Script, GithubDownloadable):
             "keepingyouawake",
             "keka",
             "krita",  # mspaint alternative
-            "libreoffice",
             "microsoft-edge",
             "--no-quarantine middleclick",
             "musicbrainz-picard",  # music metadata editor
             "notion",
+            "orbstack",  # docker desktop alternative
             "qview",
             "raycast",
             "rectangle",
             "visual-studio-code",
-            "wine-stable",
             "xquartz",
         ]
+
+        if self.args.misc:
+            casks += ["libreoffice", "wine-stable"]
+        casks += tap_packages("cask")
 
         for cask in casks:
             # 특수 옵션이 있는 cask 처리
@@ -284,7 +347,10 @@ class Mac(Script, GithubDownloadable):
     @cached_property
     def _installed_casks(self) -> set[str]:
         # 이미 설치된 cask 목록 가져오기
-        ok, installed_casks_output, _ = self.shell.run("brew list --cask -1")
+        # Casks from taps are listed as `user/repo/cask`, matching TAP_PACKAGES
+        ok, installed_casks_output, _ = self.shell.run(
+            "brew list --cask -1 --full-name"
+        )
         if not ok:
             print("Failed to list homebrew casks")
             return set()
