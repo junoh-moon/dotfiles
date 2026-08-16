@@ -97,7 +97,6 @@ class DebianPackageManager(PackageManager):
             "pigz",
             "pkg-config",
             "poppler-utils",
-            "p7zip-full",
             "python3",
             "python3-dev",
             "python3-pip",
