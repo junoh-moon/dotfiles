@@ -140,7 +140,6 @@ class DarwinPackageManager(PackageManager):
             "pigz",
             "pixz",
             "poppler",
-            "p7zip",
             "qpdf",
             "rename",
             "ripgrep",
