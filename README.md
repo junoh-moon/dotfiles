@@ -12,12 +12,44 @@ Note that you may need to enter the password to decrypt the ssh key.
 ## Encryption and Decryption
 
 Files with personal information are encrypted with [transcrypt](https://github.com/elasticdog/transcrypt).
-The `install.sh` script will set up transcrypt and decrypt all files.
+The `install.sh` script will set up transcrypt, decrypt all files, and verify the
+result using `.transcrypt-check` before continuing with the full installation.
 
 The following examples will be helpful:
 - `transcrypt --list` to list encrypted files
-- `transcrypt --display` to print current configuration for this repository 
+- `transcrypt --display > /dev/null` to check whether this repository is configured
 - `transcrypt --add path/to/file && git add path/to/file .gitattributes` to add a file to encrypt
+
+Do not run `transcrypt --display` without redirecting its output because it prints
+the configured password. To verify decryption manually, run:
+
+```sh
+grep -Fxq 'transcrypt decryption verified' .transcrypt-check && echo 'transcrypt OK'
+```
+
+### Recovering from an Incorrect Password
+
+An incorrect password may remain in the repository-local Git configuration even
+after transcrypt reports that decryption failed. Remove the cached credentials and
+return encrypted files to their original encrypted form before trying again:
+
+```sh
+git status --short
+transcrypt --flush-credentials
+./install.sh -d [debian | redhat | darwin]
+```
+
+Transcrypt normally requires a clean working tree. If the failed decryption itself
+made encrypted files appear modified, first make sure there are no intentional
+changes to those files. Only then bypass the clean-tree check:
+
+```sh
+transcrypt --flush-credentials --force
+./install.sh -d [debian | redhat | darwin]
+```
+
+The `--force` option discards uncommitted changes to encrypted files. Do not use it
+until those changes have been reviewed or backed up.
 
 **CentOS7 Support:**
 
