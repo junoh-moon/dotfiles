@@ -244,6 +244,7 @@ unset MISE_SHIMS
 export KUBECONFIG="$HOME"/.kube/config
 
 command -v javac >/dev/null 2>&1 && export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which javac))))
+command -v glow > /dev/null 2>&1 &&  alias glow='glow --width="${COLUMNS:-80}"'
 
 unset LC_ALL
 export LC_MESSAGES="en_US.UTF-8"
