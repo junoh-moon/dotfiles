@@ -5,7 +5,7 @@ source "$HOME"/.shinit
 # Put all configurations that are not universally applicable into this file.
 [ -s "$HOME"/.machine_specific.shrc ] && source "$HOME"/.machine_specific.shrc
 
-alias ds="{du -sh *; du -sh ./} | sort -rh " #diskspace
+alias ds="{du -sh *; du -sh ./} | sort -h " #diskspace
 alias normalize_unicode='convmv -r -f utf-8 -t utf-8 --notest --nfc'
 
 backup() {
