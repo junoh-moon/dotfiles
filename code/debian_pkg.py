@@ -95,6 +95,7 @@ class DebianPackageManager(PackageManager):
             "num-utils",
             "parallel",
             "pigz",
+            "pixz",
             "pkg-config",
             "poppler-utils",
             "python3",
