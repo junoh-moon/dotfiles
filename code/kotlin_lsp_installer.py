@@ -1,242 +1,108 @@
 #!/usr/bin/env python3
-import json
-import platform
-import re
-import shlex
-import uuid
-from argparse import (
-    ArgumentParser,
-    Namespace,
-)
-from urllib.parse import urlparse
+from argparse import ArgumentParser
 
 from script import Script
 
 
 class KotlinLspInstaller(Script):
-    def _get_artifact(self, body: str, os_name: str, arch: str):
-        platform_label = {
-            "linux": "Linux",
-            "macos": "macOS",
-            "windows": "Windows",
-        }[os_name]
-        arch_label = {"x64": "x64", "arm64": "arm64"}[arch]
-        target = f"Download for {platform_label}-{arch_label}".casefold()
-        links = re.findall(
-            r"\[(?P<label>[^\]]+)\]\((?P<url>https?://[^\s)]+)\)",
-            body,
-        )
-        candidates = []
-
-        for (label, url), (checksum_label, checksum_url) in zip(links, links[1:]):
-            if " ".join(label.split()).casefold() != target:
-                continue
-            checksum_label = re.sub(r"[^a-z0-9]", "", checksum_label.casefold())
-            if "sha256" not in checksum_label or "checksum" not in checksum_label:
-                continue
-
-            path = urlparse(url).path.casefold()
-            if path.endswith(".tar.gz"):
-                candidates.append((0, url, checksum_url, "tar.gz"))
-            elif path.endswith((".zip", ".sit")):
-                candidates.append((0, url, checksum_url, "zip"))
-            elif path.endswith(".vsix"):
-                candidates.append((1, url, checksum_url, "zip"))
-
-        if not candidates:
-            raise RuntimeError(
-                f"Could not find a Kotlin LSP download URL for "
-                f"{platform_label}-{arch_label}"
-            )
-        _, url, checksum_url, archive_type = min(candidates)
-        return url, checksum_url, archive_type
-
-    def _install_artifact(self, artifact, version: str):
-        archive_url, checksum_url, archive_type = artifact
-        install_dir = self.HOME / ".local" / "kotlin-lsp"
-        self.shell.env.update(
-            {
-                "KOTLIN_LSP_ARCHIVE_URL": archive_url,
-                "KOTLIN_LSP_CHECKSUM_URL": checksum_url,
-                "KOTLIN_LSP_ARCHIVE_TYPE": archive_type,
-                "KOTLIN_LSP_VERSION": version,
-                "KOTLIN_LSP_INSTALL_DIR": str(install_dir),
-                "KOTLIN_LSP_BIN_DIR": str(self.HOME / ".local" / "bin"),
-                "KOTLIN_LSP_STAGE_DIR": str(
-                    install_dir / f".staging-{version}-{uuid.uuid4().hex}"
-                ),
-            }
-        )
-        installed = self.shell.exec_list(
-            f"Installing kotlin lsp v{version} "
-            "[download/checksum/prepare/activate/cleanup]",
+    def run(self):
+        ok, _, _ = self.shell.exec(
+            "Installing the latest Kotlin LSP from Open VSX",
             r"""
             set -euo pipefail
-            stage=$KOTLIN_LSP_STAGE_DIR
-            archive="$stage/archive"
-            checksum="$stage/archive.sha256"
-            mkdir -p -- "$stage" "$KOTLIN_LSP_BIN_DIR"
-            curl -fLsS --retry 3 -o "$archive" "$KOTLIN_LSP_ARCHIVE_URL"
-            curl -fLsS --retry 3 -o "$checksum" "$KOTLIN_LSP_CHECKSUM_URL"
-            touch "$stage/downloaded"
-            """,
-            r"""
-            set -euo pipefail
-            stage=$KOTLIN_LSP_STAGE_DIR
-            [ -f "$stage/downloaded" ]
-            archive="$stage/archive"
-            checksum="$stage/archive.sha256"
-            expected=$(awk 'NR == 1 { print tolower($1) }' "$checksum")
-            printf '%s\n' "$expected" | grep -Eq '^[0-9a-f]{64}$' || {
-                echo "Kotlin LSP checksum file is invalid" >&2
-                exit 1
-            }
-            if command -v sha256sum >/dev/null 2>&1; then
-                actual=$(sha256sum "$archive" | awk '{ print $1 }')
-            elif command -v shasum >/dev/null 2>&1; then
-                actual=$(shasum -a 256 "$archive" | awk '{ print $1 }')
-            else
-                echo "sha256sum or shasum is required" >&2
-                exit 1
-            fi
-            [ "$actual" = "$expected" ] || {
-                echo "Kotlin LSP archive checksum mismatch" >&2
-                exit 1
-            }
-            touch "$stage/checksum-verified"
-            """,
-            r"""
-            set -euo pipefail
-            stage=$KOTLIN_LSP_STAGE_DIR
-            [ -f "$stage/checksum-verified" ]
-            archive="$stage/archive"
-            extracted="$stage/extracted"
-            mkdir -- "$extracted"
-            case "$KOTLIN_LSP_ARCHIVE_TYPE" in
-                tar.gz) tar -xzf "$archive" -C "$extracted" ;;
-                zip) unzip -q "$archive" -d "$extracted" ;;
-                *) echo "Unsupported Kotlin LSP archive type" >&2; exit 1 ;;
+
+            # Common setup; this block also runs directly in bash.
+            case "$(uname -s)" in
+                Linux) os_name=linux; product_os=Linux ;;
+                Darwin) os_name=darwin; product_os=macOS ;;
+                MINGW*|MSYS*|CYGWIN*) os_name=win32; product_os=Windows ;;
+                *) echo "Unsupported operating system" >&2; exit 1 ;;
             esac
-
-            find "$extracted" -type f -path '*/bin/intellij-server' \
-                -print > "$stage/launchers"
-            [ "$(wc -l < "$stage/launchers" | tr -d '[:space:]')" = 1 ] || {
-                echo "Kotlin LSP archive must contain exactly one launcher" >&2
-                exit 1
-            }
-            launcher=$(sed -n '1p' "$stage/launchers")
-            chmod +x "$launcher"
-            "$launcher" --version | grep -Fq "LS-$KOTLIN_LSP_VERSION" || {
-                echo "Kotlin LSP launcher version verification failed" >&2
-                exit 1
-            }
-            mv -- "$(dirname "$(dirname "$launcher")")" "$stage/server"
-            touch "$stage/prepared"
-            """,
-            r"""
-            set -euo pipefail
-            stage=$KOTLIN_LSP_STAGE_DIR
-            [ -f "$stage/prepared" ]
-            install_dir=$KOTLIN_LSP_INSTALL_DIR
-            bin_dir=$KOTLIN_LSP_BIN_DIR
-            target="$install_dir/kotlin-server-$KOTLIN_LSP_VERSION"
+            case "$(uname -m)" in
+                x86_64|amd64) arch=x64 ;;
+                arm64|aarch64) arch=arm64 ;;
+                *) echo "Unsupported architecture" >&2; exit 1 ;;
+            esac
+            install_dir="$HOME/.local/kotlin-lsp"
+            bin_dir="$HOME/.local/bin"
+            mkdir -p -- "$install_dir" "$bin_dir"
+            stage=$(mktemp -d "$install_dir/.staging-XXXXXX")
+            identity=${stage##*/.staging-}
             current="$bin_dir/kotlin-lsp.sh"
-            backup="$stage/previous-server"
-            temporary_link="$bin_dir/.kotlin-lsp.sh.$$"
-            published=
-            backed_up=
-            committed=
-            rollback() {
+            target="$install_dir/kotlin-server-$identity"
+            temporary_link="$bin_dir/.kotlin-lsp.sh-$identity"
+            launcher=
+            cleanup() {
                 status=$?
-                trap - EXIT INT TERM
+                trap - EXIT
                 rm -f -- "$temporary_link"
-                if [ -z "$committed" ]; then
-                    [ -z "$published" ] || rm -rf -- "$target"
-                    [ -z "$backed_up" ] || mv -- "$backup" "$target"
+                if [ -d "$target" ] && [ "$(readlink "$current" || true)" != "$target/$launcher" ]; then
+                    rm -rf -- "$target"
                 fi
+                rm -rf -- "$stage"
                 exit "$status"
             }
-            trap rollback EXIT INT TERM
-            previous=
-            if [ -L "$current" ]; then
-                previous=$(readlink "$current")
-                previous=${previous%/bin/intellij-server}
+            trap cleanup EXIT
+            trap 'exit 130' INT
+            trap 'exit 143' TERM
+
+            # Resolve the platform-specific extension and its server download URL.
+            curl -fLsS --retry 3 --connect-timeout 15 --max-time 600 \
+                --proto '=https' --proto-redir '=https' \
+                -o "$stage/extension.json" \
+                "https://open-vsx.org/api/JetBrains/kotlin-server/$os_name-$arch/latest"
+            url=$(jq -er --arg platform "$os_name-$arch" '
+                select(.namespace == "JetBrains" and .name == "kotlin-server"
+                    and .targetPlatform == $platform) | .files.download
+            ' "$stage/extension.json")
+            curl -fLsS --retry 3 --connect-timeout 15 --max-time 600 \
+                --proto '=https' --proto-redir '=https' \
+                -o "$stage/extension.vsix" "$url"
+            unzip -p "$stage/extension.vsix" extension/server-bundle.json > "$stage/bundle.json"
+
+            # Download and extract the server; the filename does not determine the format.
+            url=$(jq -er '.url' "$stage/bundle.json")
+            curl -fLsS --retry 3 --connect-timeout 15 --max-time 600 \
+                --proto '=https' --proto-redir '=https' -o "$stage/archive" "$url"
+            mkdir -- "$stage/extracted"
+            if unzip -Z -1 "$stage/archive" >/dev/null 2>&1; then
+                unzip -q "$stage/archive" -d "$stage/extracted"
+            else
+                tar -xf "$stage/archive" -C "$stage/extracted"
             fi
-            printf '%s\n' "$previous" > "$stage/previous-server-path"
-            if [ -e "$target" ] || [ -L "$target" ]; then
-                mv -- "$target" "$backup"
-                backed_up=1
-            fi
-            mv -- "$stage/server" "$target"
-            published=1
-            ln -s "$target/bin/intellij-server" "$temporary_link"
+            find "$stage/extracted" -type f -name product-info.json > "$stage/products"
+            [ "$(wc -l < "$stage/products" | tr -d '[:space:]')" = 1 ] || {
+                echo "Expected exactly one product-info.json" >&2
+                exit 1
+            }
+            product=$(cat "$stage/products")
+            launcher=$(jq -er --arg os "$product_os" --arg arch "$arch" '
+                {"x64":"x64", "amd64":"x64", "x86_64":"x64",
+                 "arm64":"arm64", "aarch64":"arm64"} as $arches |
+                [.launch[] | select(.os == $os and $arches[.arch] == $arch)] |
+                if length == 1 then .[0].launcherPath else error("Expected one launcher") end
+            ' "$product")
+            case "$launcher" in
+                /*|../*|*/../*|*/..) echo "Invalid launcher path: $launcher" >&2; exit 1 ;;
+            esac
+            server=$(dirname "$product")
+            [ -f "$server/$launcher" ]
+            chmod +x "$server/$launcher"
+
+            # Switch the launcher only after extraction succeeds; keep the previous install.
+            previous=$(readlink "$current" || true)
+            previous=${previous#"$install_dir"/}
+            previous="$install_dir/${previous%%/*}"
+            mv -- "$server" "$target"
+            ln -s "$target/$launcher" "$temporary_link"
             mv -f -- "$temporary_link" "$current"
-            committed=1
-            touch "$stage/committed"
+            find "$install_dir" -mindepth 1 -maxdepth 1 -type d \
+                -name 'kotlin-server-*' ! -path "$target" ! -path "$previous" \
+                -exec rm -rf -- {} + || echo "Could not remove old Kotlin LSP installs" >&2
             """,
-            r"""
-            set -euo pipefail
-            stage=$KOTLIN_LSP_STAGE_DIR
-            if [ -f "$stage/committed" ]; then
-                install_dir=$KOTLIN_LSP_INSTALL_DIR
-                target="$install_dir/kotlin-server-$KOTLIN_LSP_VERSION"
-                previous=$(sed -n '1p' "$stage/previous-server-path")
-                case "$previous" in
-                    "$install_dir"/kotlin-server-*) ;;
-                    *) previous= ;;
-                esac
-                for directory in "$install_dir"/kotlin-server-*; do
-                    [ -d "$directory" ] || continue
-                    [ "$directory" = "$target" ] && continue
-                    [ "$directory" = "$previous" ] && continue
-                    rm -rf -- "$directory"
-                done
-            fi
-            rm -rf -- "$stage"
-            """,
-        )
-        if not installed:
-            raise RuntimeError("Failed to install Kotlin LSP")
-
-    def run(self):
-        system = platform.system().lower()
-        machine = platform.machine().lower()
-        os_name = {
-            "darwin": "macos",
-            "linux": "linux",
-            "windows": "windows",
-        }.get(system)
-        arch = {
-            "x86_64": "x64",
-            "amd64": "x64",
-            "arm64": "arm64",
-            "aarch64": "arm64",
-        }.get(machine)
-        if os_name is None:
-            raise RuntimeError(f"Unsupported operating system: {system}")
-        if arch is None:
-            raise RuntimeError(f"Unsupported architecture: {machine}")
-
-        ok, out, err = self.shell.run(
-            "curl -fsSL "
-            "https://api.github.com/repos/Kotlin/kotlin-lsp/releases/latest"
         )
         if not ok:
-            raise RuntimeError(f"Failed to fetch latest Kotlin LSP release: {err}")
-
-        release = json.loads(out)
-        version = release["tag_name"].rsplit("/", 1)[-1].removeprefix("v")
-        current = self.HOME / ".local" / "bin" / "kotlin-lsp.sh"
-        if current.is_file():
-            current_ok, current_version, _ = self.shell.run(
-                f"{shlex.quote(str(current))} --version"
-            )
-            if current_ok and f"LS-{version}" in current_version:
-                print(f"Kotlin LSP v{version} is already installed")
-                return
-
-        artifact = self._get_artifact(release.get("body", ""), os_name, arch)
-        self._install_artifact(artifact, version)
+            raise RuntimeError("Failed to install Kotlin LSP")
 
 
 if __name__ == "__main__":
