@@ -70,9 +70,9 @@ class Vim(Script, GithubDownloadable):
         if self.args.elixir:
             self.shell.exec_list(
                 "Installing elixir-ls",
-                "git clone https://github.com/elixir-lsp/elixir-ls.git ~/.elixir-ls",
+                'git clone https://github.com/elixir-lsp/elixir-ls.git "$HOME/.elixir-ls" || '
+                'git -C "$HOME/.elixir-ls" pull --ff-only',
                 "cd ~/.elixir-ls && "
-                ". $HOME/.asdf/asdf.sh && "
                 "mix local.hex --force && "
                 "mix local.rebar --force && "
                 "mix deps.get && "
