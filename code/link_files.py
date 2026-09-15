@@ -67,7 +67,7 @@ class FileLinker(Script):
         if not os.path.islink(f"{HOME}/.config"):
             self.shell.exec(
                 f"Aliasing {HOME}/.config",
-                f'ln -fs "{proj_root}"/config {HOME}/.config',
+                f'rm -rf "{HOME}/.config" && ln -s "{proj_root}/config" "{HOME}/.config"',
             )
 
         self.shell.exec(
