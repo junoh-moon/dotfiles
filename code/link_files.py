@@ -134,7 +134,7 @@ class FileLinker(Script):
                 f"""
                 [ -L "{target}" ] && rm "{target}" || true
                 [ ! -f "{target}" ] && echo '{{}}' > "{target}" || true
-                jq -s '.[0] * .[1]' "{target}" "{managed}" > "{target}.tmp" && mv "{target}.tmp" "{target}"
+                yq eval-all -i -p json -o json '. as $i ireduce ({{}}; . * $i)' "{target}" "{managed}"
                 """,
             )
             with open(f"{proj_root}/config/claude-code/mcp.json") as f:
