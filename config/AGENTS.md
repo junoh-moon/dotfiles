@@ -11,8 +11,16 @@
 - When unsure about CLI command usage, actively use help options (`--help`, `-h`, `help` subcommand) to explore available arguments and syntax.
 - To access Github information, do not use the WebFetch tool; use `gh` to reuse the existing authenticated session.
 - Use "하십시오체" for Korean.
+- Never leave a background subagent or shell open once it has finished or is no longer needed, including ones that completed on their own.
+- Allowed to read other agents' memories; `~/.codex/memories/`, `~/.claude/projects/*/memory/`.
+- When writing memories, do not just append information; you must consider remove or update existing memories first.
 
 ### Miscellaneous
 - If current working directory is inside `/mnt/elements/micro_services`, DO NOT USE SEARCH/FIND RECURSIVELY WITHOUT MAX-DEPTH LIMIT
+- Prefer the minimal fix; do not refactor structure alongside a bug fix. In review loops accept only findings that matter in realistic use, and push back on over-engineering.
+- During review→fix loops, run a simplification pass (e.g. `/simplify`) every round or two so patches do not erode code quality.
+- Before deleting or cleaning up, verify what would be lost, and make and verify a backup first. Never force-remove a dirty git worktree.
+- Before `kubectl apply`, run `kubectl diff -f <file>` and show the result.
+- On the home server, check `free -h` right before a memory-heavy job; RAM is shared with live k3s services.
 
 -----
