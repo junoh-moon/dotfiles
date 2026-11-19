@@ -158,6 +158,15 @@ class FileLinker(Script):
                 f"mkdir -p {HOME}/.codex",
                 f'ln -fs "{proj_root}"/config/AGENTS.md {HOME}/.codex/AGENTS.md',
             )
+            target = f"{HOME}/.codex/config.toml"
+            managed = f"{proj_root}/config/codex/config.managed.toml"
+            self.shell.exec(
+                "Merging managed config into codex cli config",
+                f"""
+                [ ! -f "{target}" ] && touch "{target}" || true
+                yq eval-all -i -p toml -o toml '. as $i ireduce ({{}}; . * $i)' "{target}" "{managed}"
+                """,
+            )
         return
 
     def _is_wsl(self):

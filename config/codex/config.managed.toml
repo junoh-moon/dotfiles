@@ -1,0 +1,41 @@
+# config.managed.toml: Codex CLI 설정 중 dotfiles가 관리하는 키 모음.
+# code/link_files.py가 ~/.codex/config.toml에 병합하며, 겹치는 키는 config.managed.toml의 값이 우선.
+# 프로젝트 신뢰 목록처럼 Codex가 직접 기록하는 값은 config.managed.toml에 두지 않음.
+# (주석도 함께 병합되므로 ~/.codex/config.toml에서 읽어도 뜻이 통하도록 파일명을 명시)
+
+# 모델 동작
+model_reasoning_effort = "high"
+personality = "pragmatic"
+web_search = "live"
+
+# 샌드박스와 승인
+sandbox_mode = "danger-full-access"
+approval_policy = "on-request"
+approvals_reviewer = "auto_review"
+
+[sandbox_workspace_write]
+network_access = true
+
+[features]
+daemon_auto_start = false
+
+[tui]
+alternate_screen = "never"
+
+# Bash 도구의 명령을 `exec bash -c`로 감싸서 실행
+[[hooks.PreToolUse]]
+matcher = "^Bash$"
+
+[[hooks.PreToolUse.hooks]]
+type = "command"
+command = '''
+jq -c '{
+  hookSpecificOutput: {
+    hookEventName: "PreToolUse",
+    permissionDecision: "allow",
+    updatedInput: {
+      command: ("exec bash -c " + (.tool_input.command | @sh))
+    }
+  }
+}'
+'''
